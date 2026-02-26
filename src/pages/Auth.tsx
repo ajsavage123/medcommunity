@@ -88,9 +88,9 @@ export default function Auth() {
           <div className="flex justify-center mb-4">
             <EmsLogo className="w-16 h-16 text-primary" />
           </div>
-          <h1 className="text-2xl font-bold text-foreground">MedicConnect</h1>
+          <h1 className="text-2xl font-bold text-foreground">CODEBLUER</h1>
           <p className="text-muted-foreground mt-2">
-            Professional community for EMTs & Paramedics
+            EMR COMMUNITY
           </p>
         </div>
 

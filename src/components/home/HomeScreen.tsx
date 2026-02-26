@@ -28,10 +28,10 @@ export function HomeScreen({ onRoomSelect, onViewAllTrending, onViewAllRooms }: 
         <div className="flex items-start justify-between">
           <div>
             <h1 className="text-xl font-bold mb-1">
-              Welcome back, {profile?.name ? profile.name.split(' ')[0] : 'EMT'} 👋
+              Welcome back, {profile?.name ? profile.name.split(' ')[0] : 'EMR'} 👋
             </h1>
-            <p className="text-primary-foreground/80 text-sm">
-              Connect with fellow EMTs & Paramedics
+            <p className="text-primary-foreground/80 text-sm font-medium">
+              EMR COMMUNITY
             </p>
           </div>
           <div className="w-12 h-12 rounded-xl bg-white/20 flex items-center justify-center">

@@ -19,7 +19,7 @@ export function Header({ title, showSearch = true, showNotifications = true }: H
           ) : (
             <div className="flex flex-col">
               <span className="text-sm font-bold text-foreground leading-tight tracking-tight">CODEBLUER</span>
-              <span className="text-[10px] text-muted-foreground leading-tight">EMT & Paramedic Community</span>
+              <span className="text-[10px] text-muted-foreground leading-tight">EMR COMMUNITY</span>
             </div>
           )}
         </div>
