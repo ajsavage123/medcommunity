@@ -260,7 +260,7 @@ function Bubble({
         </div>
       )}
 
-      {showAvatar ? (
+      {showAvatar && (
         <div className="w-[32px] h-[32px] shrink-0 self-start mt-0.5 relative">
           <div className="absolute inset-0 rounded-[12px] bg-gradient-to-br from-white/50 to-black/10 blur-[1px]" />
           <div className="relative w-full h-full rounded-[12px] bg-white overflow-hidden shadow-[0_4px_10px_rgba(0,0,0,0.1),inset_0_-2px_4px_rgba(0,0,0,0.1),inset_0_2px_4px_rgba(255,255,255,1)] border border-slate-200">
@@ -271,8 +271,6 @@ function Bubble({
             />
           </div>
         </div>
-      ) : (
-        <div className="w-[32px] shrink-0" />
       )}
 
       <div className={cn('flex flex-col max-w-[82%]', isOwn ? 'items-end' : 'items-start')}>
