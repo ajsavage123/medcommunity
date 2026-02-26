@@ -13,6 +13,7 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
 import { getClayAvatar } from '@/lib/avatars';
 import { mockUsers } from '@/data/mockData';
+import { sounds } from '@/lib/sounds';
 import { User } from '@/types';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 
@@ -377,6 +378,19 @@ export function WhatsAppChat({ room, onBack }: WhatsAppChatProps) {
   const sendMessage = useSendMessage();
 
   const theme = useMemo(() => ROOM_THEMES[room.type] || ROOM_THEMES.general, [room.type]);
+  const lastMsgId = useRef<string | null>(null);
+
+  // Handle Receiving Message Sounds
+  useEffect(() => {
+    if (messages.length > 0) {
+      const last = messages[messages.length - 1];
+      // Only play if it's a new incoming message (not from us)
+      if (lastMsgId.current && last.id !== lastMsgId.current && last.userId !== user?.id) {
+        sounds.playReceive();
+      }
+      lastMsgId.current = last.id;
+    }
+  }, [messages, user?.id]);
 
   useEffect(() => {
     if (!isSearchOpen && !searchQuery) {
@@ -387,6 +401,7 @@ export function WhatsAppChat({ room, onBack }: WhatsAppChatProps) {
   const handleSend = async (content?: string) => {
     const val = content || text.trim();
     if (!val) return;
+    sounds.playSend(); // Immediate feedback for better UX
     try {
       await sendMessage.mutateAsync({
         roomId: room.id, content: val,
