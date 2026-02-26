@@ -304,7 +304,8 @@ function Bubble({
 
           {msg.replyTo && (
             <div
-              className="mb-2 p-2 bg-black/5 rounded-xl border-l-[3px] border-primary/40 text-[11px] italic text-slate-500 max-w-full cursor-pointer hover:bg-black/10 transition-colors"
+              className="mb-2 p-2 bg-black/5 rounded-lg border-l-[4px] text-[11px] text-slate-500 cursor-pointer hover:bg-black/10 transition-all active:scale-[0.98] select-none overflow-hidden"
+              style={{ borderLeftColor: theme.primary }}
               onClick={(e) => {
                 e.stopPropagation();
                 const el = document.getElementById(msg.replyTo!);
@@ -315,13 +316,13 @@ function Bubble({
                 }
               }}
             >
-              <div className="font-bold text-[9px] uppercase mb-0.5 text-primary/80 not-italic">
+              <div className="font-bold text-[10px] uppercase mb-0.5" style={{ color: theme.primary }}>
                 {allMessages.find(m => m.id === msg.replyTo)?.isAnonymous
                   ? 'Anonymous'
                   : (allMessages.find(m => m.id === msg.replyTo)?.user?.name || 'User')}
               </div>
-              <div className="truncate">
-                {allMessages.find(m => m.id === msg.replyTo)?.content || 'Message deleted or unavailable'}
+              <div className="line-clamp-2 leading-tight pr-2">
+                {allMessages.find(m => m.id === msg.replyTo)?.content || 'Original message not found'}
               </div>
             </div>
           )}
