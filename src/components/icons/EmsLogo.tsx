@@ -17,29 +17,32 @@ export function EmsLogo({ className, size = 'md' }: EmsLogoProps) {
       {/* Star of Life inspired design */}
       <svg viewBox="0 0 100 100" className="w-full h-full" fill="none">
         {/* Background circle */}
-        <circle cx="50" cy="50" r="48" className="fill-primary" />
-        
-        {/* Cross/Star pattern */}
+        <circle cx="50" cy="50" r="48" className="fill-blue-600" />
+
+        {/* Star of Life */}
+        <g className="stroke-white" strokeWidth="14" strokeLinecap="round">
+          {/* Vertical */}
+          <line x1="50" y1="20" x2="50" y2="80" />
+          {/* Diagonals */}
+          <line x1="24" y1="35" x2="76" y2="65" />
+          <line x1="24" y1="65" x2="76" y2="35" />
+        </g>
+
+        {/* Rod of Asclepius - Simplified/Stylized center */}
         <path
-          d="M50 10 L50 90 M10 50 L90 50"
-          className="stroke-primary-foreground"
-          strokeWidth="16"
+          d="M50 25 L50 75 M44 35 Q50 30 56 35 T44 45 Q50 40 56 45 T44 55 Q50 50 56 55 T44 65 Q50 60 56 65"
+          className="stroke-blue-600"
+          strokeWidth="3.5"
           strokeLinecap="round"
+          fill="none"
         />
-        
-        {/* Diagonal lines for star effect */}
-        <path
-          d="M22 22 L78 78 M78 22 L22 78"
-          className="stroke-primary-foreground"
-          strokeWidth="10"
-          strokeLinecap="round"
-        />
-        
-        {/* Center circle */}
-        <circle cx="50" cy="50" r="12" className="fill-primary-foreground" />
-        
-        {/* Inner accent */}
-        <circle cx="50" cy="50" r="6" className="fill-primary" />
+
+        {/* Center white circle for contrast */}
+        <circle cx="50" cy="50" r="10" className="fill-white" />
+
+        {/* Simplified snake/staff */}
+        <path d="M50 30 V70" className="stroke-blue-600" strokeWidth="4" />
+        <path d="M44 40 C44 35, 56 35, 56 40 C56 45, 44 45, 44 50 C44 55, 56 55, 56 60" className="stroke-blue-600" strokeWidth="2.5" fill="none" />
       </svg>
     </div>
   );

@@ -18,12 +18,12 @@ export function Header({ title, showSearch = true, showNotifications = true }: H
             <h1 className="text-lg font-bold text-foreground">{title}</h1>
           ) : (
             <div className="flex flex-col">
-              <span className="text-sm font-bold text-foreground leading-tight">MedicConnect</span>
+              <span className="text-sm font-bold text-foreground leading-tight tracking-tight">CODEBLUER</span>
               <span className="text-[10px] text-muted-foreground leading-tight">EMT & Paramedic Community</span>
             </div>
           )}
         </div>
-        
+
         <div className="flex items-center gap-1">
           {showSearch && (
             <Button variant="ghost" size="icon-sm" className="text-muted-foreground">
