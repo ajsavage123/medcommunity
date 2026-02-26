@@ -154,20 +154,48 @@
 }
 
 @layer components {
+
   /* Mobile bottom nav safe area */
   .safe-bottom {
     padding-bottom: env(safe-area-inset-bottom, 0px);
   }
 
+  .safe-top {
+    padding-top: env(safe-area-inset-top, 0px);
+  }
+
   /* Room badge colors */
-  .room-badge-general { @apply bg-primary/10 text-primary; }
-  .room-badge-salary { @apply bg-success/10 text-success; }
-  .room-badge-career { @apply bg-purple-500/10 text-purple-600; }
-  .room-badge-leadership { @apply bg-accent/10 text-accent; }
-  .room-badge-entrepreneurship { @apply bg-pink-500/10 text-pink-600; }
-  .room-badge-certifications { @apply bg-cyan-500/10 text-cyan-600; }
-  .room-badge-students { @apply bg-yellow-500/10 text-yellow-600; }
-  .room-badge-library { @apply bg-slate-500/10 text-slate-600; }
+  .room-badge-general {
+    @apply bg-primary/10 text-primary;
+  }
+
+  .room-badge-salary {
+    @apply bg-success/10 text-success;
+  }
+
+  .room-badge-career {
+    @apply bg-purple-500/10 text-purple-600;
+  }
+
+  .room-badge-leadership {
+    @apply bg-accent/10 text-accent;
+  }
+
+  .room-badge-entrepreneurship {
+    @apply bg-pink-500/10 text-pink-600;
+  }
+
+  .room-badge-certifications {
+    @apply bg-cyan-500/10 text-cyan-600;
+  }
+
+  .room-badge-students {
+    @apply bg-yellow-500/10 text-yellow-600;
+  }
+
+  .room-badge-library {
+    @apply bg-slate-500/10 text-slate-600;
+  }
 
   /* Trending indicator */
   .trending-dot {
@@ -191,6 +219,7 @@
 }
 
 @layer utilities {
+
   /* Animation utilities */
   .animate-fade-in {
     animation: fadeIn 0.3s ease-out;
@@ -205,27 +234,34 @@
   }
 
   @keyframes fadeIn {
-    from { opacity: 0; }
-    to { opacity: 1; }
+    from {
+      opacity: 0;
+    }
+
+    to {
+      opacity: 1;
+    }
   }
 
   @keyframes slideUp {
-    from { 
+    from {
       opacity: 0;
       transform: translateY(10px);
     }
-    to { 
+
+    to {
       opacity: 1;
       transform: translateY(0);
     }
   }
 
   @keyframes scaleIn {
-    from { 
+    from {
       opacity: 0;
       transform: scale(0.95);
     }
-    to { 
+
+    to {
       opacity: 1;
       transform: scale(1);
     }

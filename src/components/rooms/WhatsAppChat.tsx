@@ -125,7 +125,7 @@ function ChatHeader({ room, onBack, isSearchOpen, setIsSearchOpen, searchQuery, 
   const online = ONLINE_COUNTS[room.type] ?? 0;
 
   return (
-    <div className={cn("flex flex-col text-white shadow-md z-50 sticky top-0", theme.header)}>
+    <div className={cn("flex flex-col text-white shadow-md z-50 sticky top-0 safe-top", theme.header)}>
       <div className="flex items-center gap-3 px-4 py-2.5">
         {!isSearchOpen ? (
           <>
