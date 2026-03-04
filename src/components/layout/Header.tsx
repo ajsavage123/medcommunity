@@ -1,6 +1,8 @@
+import { useState } from 'react';
 import { Bell, Search } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { EmsLogo } from '@/components/icons/EmsLogo';
+import { NotificationsPopover, NotificationBadge } from '@/components/notifications/NotificationsPopover';
 
 interface HeaderProps {
   title?: string;
@@ -9,6 +11,8 @@ interface HeaderProps {
 }
 
 export function Header({ title, showSearch = true, showNotifications = true }: HeaderProps) {
+  const [showNotificationsPopover, setShowNotificationsPopover] = useState(false);
+
   return (
     <header className="sticky top-0 z-40 glass border-b border-border">
       <div className="flex items-center justify-between h-14 px-4 max-w-lg mx-auto">
@@ -24,17 +28,27 @@ export function Header({ title, showSearch = true, showNotifications = true }: H
           )}
         </div>
 
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1 relative">
           {showSearch && (
             <Button variant="ghost" size="icon-sm" className="text-muted-foreground">
               <Search className="w-5 h-5" />
             </Button>
           )}
           {showNotifications && (
-            <Button variant="ghost" size="icon-sm" className="text-muted-foreground relative">
-              <Bell className="w-5 h-5" />
-              <span className="absolute top-1 right-1 w-2 h-2 rounded-full bg-accent" />
-            </Button>
+            <div className="relative">
+              <Button 
+                variant="ghost" 
+                size="icon-sm" 
+                className="text-muted-foreground relative"
+                onClick={() => setShowNotificationsPopover(!showNotificationsPopover)}
+              >
+                <Bell className="w-5 h-5" />
+                <NotificationBadge />
+              </Button>
+              {showNotificationsPopover && (
+                <NotificationsPopover onClose={() => setShowNotificationsPopover(false)} />
+              )}
+            </div>
           )}
         </div>
       </div>

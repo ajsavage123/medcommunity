@@ -5,7 +5,6 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { EmsLogo } from '@/components/icons/EmsLogo';
 import { toast } from '@/hooks/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { Mail, Lock, ArrowRight, Loader2, Eye, EyeOff } from 'lucide-react';
 import { Separator } from '@/components/ui/separator';
 
@@ -18,7 +17,7 @@ export default function Auth() {
   const [showPassword, setShowPassword] = useState(false);
   const [loading, setLoading] = useState(false);
   const [googleLoading, setGoogleLoading] = useState(false);
-  const { signIn, signUp } = useAuth();
+  const { signIn, signUp, signInWithGoogle, resetPassword } = useAuth();
   const navigate = useNavigate();
 
   const handleSubmit = async (e: React.FormEvent) => {
@@ -27,9 +26,7 @@ export default function Auth() {
 
     try {
       if (mode === 'forgot') {
-        const { error } = await supabase.auth.resetPasswordForEmail(email, {
-          redirectTo: `${window.location.origin}/auth?mode=reset`,
-        });
+        const { error } = await resetPassword(email);
         if (error) throw error;
         toast({
           title: 'Check your email',
@@ -40,7 +37,7 @@ export default function Auth() {
         const { error } = await signIn(email, password);
         if (error) throw error;
         toast({ title: 'Welcome back!', description: 'Successfully logged in.' });
-        navigate('/');
+        navigate('/onboarding');
       } else {
         const { error } = await signUp(email, password);
         if (error) throw error;
@@ -63,12 +60,7 @@ export default function Auth() {
   const handleGoogleSignIn = async () => {
     setGoogleLoading(true);
     try {
-      const { error } = await supabase.auth.signInWithOAuth({
-        provider: 'google',
-        options: {
-          redirectTo: window.location.origin,
-        }
-      });
+      const { error } = await signInWithGoogle();
       if (error) throw error;
     } catch (error: any) {
       toast({

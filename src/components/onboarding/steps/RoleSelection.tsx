@@ -17,41 +17,47 @@ interface RoleSelectionProps {
   setData: React.Dispatch<React.SetStateAction<OnboardingData>>;
 }
 
-const roles: { type: UserType; label: string; description: string; icon: React.ElementType }[] = [
+const roles: { type: UserType; label: string; description: string; hint: string; icon: React.ElementType }[] = [
   {
     type: 'student',
     label: 'Student',
     description: 'Currently studying or interning in EMS',
+    hint: 'Learn, grow, and connect with fellow healthcare professionals',
     icon: GraduationCap,
   },
   {
     type: 'employee',
     label: 'Employee',
     description: 'Working as EMT or Paramedic',
+    hint: 'Share expertise, network, and access career resources',
     icon: Briefcase,
   },
   {
     type: 'hr',
     label: 'HR Manager',
     description: 'Recruiting & managing EMS professionals',
+    hint: 'Post jobs, manage team, and find top talent in emergency medicine',
     icon: Users,
   },
   {
     type: 'international_coordinator',
-    label: 'International Coordinator',
-    description: 'Facilitating global EMS opportunities',
+    label: 'International Opportunities',
+    description: 'Bring abroad opportunities to EMS professionals',
+    hint: 'Connect professionals with global career opportunities and international assignments',
     icon: Globe,
   },
   {
     type: 'instructor',
     label: 'Instructor / Trainer',
-    description: 'Providing certifications (ACLS/BLS/PALS)',
+    description: 'Provide certifications and training programs',
+    hint: 'Offer ACLS, BLS, PALS, PTLS certifications and professional development courses',
     icon: Award,
   },
   {
     type: 'faculty',
     label: 'Faculty / Lecturer',
-    description: 'Teaching in paramedic programs',
+    description: 'Teach in paramedic or EMS programs',
+    hint: 'Educate the next generation of emergency medical professionals',
     icon: BookOpen,
   },
 ];
@@ -111,6 +117,11 @@ export function RoleSelection({ data, setData }: RoleSelectionProps) {
                 <p className="text-sm text-muted-foreground mt-0.5">
                   {role.description}
                 </p>
+                {isSelected && (
+                  <p className="text-xs text-primary mt-2 font-medium">
+                    💡 {role.hint}
+                  </p>
+                )}
               </div>
               <div className={cn(
                 'w-5 h-5 rounded-full border-2 flex-shrink-0 mt-0.5',

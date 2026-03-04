@@ -1,6 +1,6 @@
-// DEV BYPASS: Using mock data instead of Supabase (ERR_NAME_NOT_RESOLVED)
-// TODO: Restore real Supabase queries when ready for production.
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { useAuth } from '@/contexts/AuthContext';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface MessageVoteData {
   upvotes: number;
@@ -9,18 +9,35 @@ export interface MessageVoteData {
   userVote: 'up' | 'down' | null;
 }
 
-// In-memory vote store
-const _votesStore: Record<string, MessageVoteData> = {};
-
 export function useMessageVotes(messageIds: string[]) {
+  const { user } = useAuth();
+
   return useQuery({
     queryKey: ['message-votes', messageIds],
     queryFn: async () => {
-      const votesMap: Record<string, MessageVoteData> = {};
-      messageIds.forEach(id => {
-        votesMap[id] = _votesStore[id] ?? { upvotes: 0, downvotes: 0, score: 0, userVote: null };
+      if (messageIds.length === 0) return {};
+      const { data, error } = await supabase
+        .from('message_votes')
+        .select('*')
+        .in('message_id', messageIds);
+      if (error) throw error;
+
+      const map: Record<string, MessageVoteData> = {};
+      messageIds.forEach((id) => {
+        map[id] = { upvotes: 0, downvotes: 0, score: 0, userVote: null };
       });
-      return votesMap;
+
+      data?.forEach((vote: any) => {
+        const { message_id, vote_type, user_id } = vote;
+        if (!map[message_id]) return;
+        if (vote_type === 'up') map[message_id].upvotes++;
+        if (vote_type === 'down') map[message_id].downvotes++;
+        if (user && user.id === user_id) {
+          map[message_id].userVote = vote_type;
+        }
+        map[message_id].score = map[message_id].upvotes - map[message_id].downvotes;
+      });
+      return map;
     },
     enabled: messageIds.length > 0,
   });
@@ -28,6 +45,7 @@ export function useMessageVotes(messageIds: string[]) {
 
 export function useVoteMessage() {
   const queryClient = useQueryClient();
+  const { user } = useAuth();
 
   return useMutation({
     mutationFn: async ({
@@ -38,30 +56,44 @@ export function useVoteMessage() {
       roomId: string;
       voteType: 'up' | 'down';
     }) => {
-      const current = _votesStore[messageId] ?? { upvotes: 0, downvotes: 0, score: 0, userVote: null };
+      if (!user) throw new Error('Not authenticated');
 
-      if (current.userVote === voteType) {
-        // Toggle off
-        if (voteType === 'up') current.upvotes = Math.max(0, current.upvotes - 1);
-        else current.downvotes = Math.max(0, current.downvotes - 1);
-        current.userVote = null;
+      // fetch existing vote if any
+      const { data: existing, error: fetchErr } = await supabase
+        .from('message_votes')
+        .select('*')
+        .eq('message_id', messageId)
+        .eq('user_id', user.id)
+        .single();
+      if (fetchErr && fetchErr.code !== 'PGRST116') throw fetchErr;
+
+      if (existing) {
+        if (existing.vote_type === voteType) {
+          // remove vote
+          const { error: delErr } = await supabase
+            .from('message_votes')
+            .delete()
+            .eq('id', existing.id);
+          if (delErr) throw delErr;
+        } else {
+          const { error: updErr } = await supabase
+            .from('message_votes')
+            .update({ vote_type: voteType })
+            .eq('id', existing.id);
+          if (updErr) throw updErr;
+        }
       } else {
-        // Undo previous vote if any
-        if (current.userVote === 'up') current.upvotes = Math.max(0, current.upvotes - 1);
-        if (current.userVote === 'down') current.downvotes = Math.max(0, current.downvotes - 1);
-        // Apply new vote
-        if (voteType === 'up') current.upvotes++;
-        else current.downvotes++;
-        current.userVote = voteType;
+        const { error: insErr } = await supabase
+          .from('message_votes')
+          .insert({ message_id: messageId, user_id: user.id, vote_type: voteType });
+        if (insErr) throw insErr;
       }
 
-      current.score = current.upvotes - current.downvotes;
-      _votesStore[messageId] = current;
-      return { action: 'voted' };
+      return { messageId };
     },
     onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['message-votes'] });
-      queryClient.invalidateQueries({ queryKey: ['messages', variables.roomId] });
+      queryClient.invalidateQueries({ queryKey: ['message-votes', variables.messageId] });
+      queryClient.invalidateQueries({ queryKey: ['messages'] });
       queryClient.invalidateQueries({ queryKey: ['trending-messages'] });
     },
   });

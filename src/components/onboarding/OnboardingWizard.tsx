@@ -4,12 +4,14 @@ import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUpdateOnboardingProfile } from '@/hooks/useOnboarding';
+import { useSubmitSalaryData } from '@/hooks/useSalaryData';
 import { toast } from '@/hooks/use-toast';
 import { RoleSelection } from './steps/RoleSelection';
 import { EmployeeDetails } from './steps/EmployeeDetails';
 import { StudentDetails } from './steps/StudentDetails';
 import { NameInput } from './steps/NameInput';
 import { ArrowLeft, ArrowRight, Check, Loader2 } from 'lucide-react';
+import { getClayAvatar } from '@/lib/avatars';
 import type { Database } from '@/integrations/supabase/types';
 
 type UserType = Database['public']['Enums']['user_type'];
@@ -18,6 +20,7 @@ type SectorType = Database['public']['Enums']['sector_type'];
 
 export interface OnboardingData {
   name: string;
+  gender: 'male' | 'female' | 'other' | null;
   userType: UserType | null;
   isIntern: boolean;
   sector: SectorType | null;
@@ -26,7 +29,7 @@ export interface OnboardingData {
   salary: number | null;
 }
 
-const STEP_LABELS = ['Your Name', 'Your Role', 'Details'];
+const STEP_LABELS = ['Name & Gender', 'Your Role', 'Details'];
 
 export function OnboardingWizard() {
   const navigate = useNavigate();
@@ -36,6 +39,7 @@ export function OnboardingWizard() {
   const [step, setStep] = useState(0);
   const [data, setData] = useState<OnboardingData>({
     name: '',
+    gender: null,
     userType: null,
     isIntern: false,
     sector: null,
@@ -44,13 +48,14 @@ export function OnboardingWizard() {
     salary: null,
   });
 
+  // add gender selection as part of name step (step 0); count doesn't change
   const totalSteps = data.userType === 'employee' || data.userType === 'student' ? 3 : 2;
   const progress = ((step + 1) / totalSteps) * 100;
 
   const canProceed = () => {
     switch (step) {
       case 0:
-        return data.name.trim().length >= 2;
+        return data.name.trim().length >= 2 && data.gender !== null;
       case 1:
         return data.userType !== null;
       case 2:
@@ -84,6 +89,8 @@ export function OnboardingWizard() {
     return date.toISOString().split('T')[0];
   };
 
+  const submitSalary = useSubmitSalaryData();
+
   const handleComplete = async () => {
     if (!user) return;
 
@@ -94,8 +101,16 @@ export function OnboardingWizard() {
         finalUserType = 'intern';
       }
 
+      const genderForAvatar: 'male' | 'female' | undefined = 
+        data.gender === 'other' ? undefined : (data.gender as 'male' | 'female');
+      const avatarUrl = user
+        ? getClayAvatar(user.id, genderForAvatar, data.name)
+        : null;
+
       await updateProfile.mutateAsync({
         name: data.name,
+        gender: data.gender,
+        avatar_url: avatarUrl,
         userType: finalUserType,
         sector: data.userType === 'employee' ? data.sector : null,
         qualification: data.userType === 'employee' ? data.qualification : null,
@@ -104,6 +119,24 @@ export function OnboardingWizard() {
           ? calculateExperienceStartDate(data.experienceYears) 
           : null,
       });
+
+      // optionally push salary post if user provided salary and employee
+      if (data.userType === 'employee' && data.salary != null) {
+        try {
+          await submitSalary.mutateAsync({
+            role: 'emt', // default until we add explicit role step
+            sector: data.sector || 'private',
+            location: '',
+            experienceYears: data.experienceYears,
+            salary: data.salary,
+            currency: 'INR',
+            workingHours: 12,
+          });
+        } catch (err) {
+          // non-critical, just log
+          console.warn('Failed to auto-submit salary post:', err);
+        }
+      }
 
       toast({ title: 'Welcome!', description: 'Your profile is all set up.' });
       navigate('/');
@@ -139,9 +172,9 @@ export function OnboardingWizard() {
   const showDetailsStep = data.userType === 'employee' || data.userType === 'student';
 
   return (
-    <div className="min-h-screen bg-background flex flex-col">
+    <div className="min-h-screen bg-background flex flex-col overflow-hidden">
       {/* Header with progress */}
-      <div className="p-4 border-b border-border">
+      <div className="sticky top-0 z-10 bg-background p-4 border-b border-border">
         <div className="max-w-md mx-auto">
           <div className="flex items-center justify-between mb-2">
             <span className="text-sm text-muted-foreground">
@@ -156,14 +189,14 @@ export function OnboardingWizard() {
       </div>
 
       {/* Content */}
-      <div className="flex-1 flex flex-col items-center justify-center p-6">
+      <div className="flex-1 overflow-auto flex flex-col items-center justify-center p-6">
         <div className="w-full max-w-md animate-fade-in">
           {renderStep()}
         </div>
       </div>
 
       {/* Navigation */}
-      <div className="p-4 border-t border-border">
+      <div className="sticky bottom-0 z-10 bg-background p-4 border-t border-border">
         <div className="max-w-md mx-auto flex gap-3">
           {step > 0 && (
             <Button 

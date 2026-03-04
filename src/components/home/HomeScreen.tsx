@@ -6,7 +6,8 @@ import { useRooms } from '@/hooks/useRooms';
 import { useProfile } from '@/hooks/useProfile';
 import { Room } from '@/types';
 import { Skeleton } from '@/components/ui/skeleton';
-import { mockMessages, mockUsers } from '@/data/mockData';
+import { useQuery } from '@tanstack/react-query';
+import { supabase } from '@/integrations/supabase/client';
 
 interface HomeScreenProps {
   onRoomSelect: (room: Room) => void;
@@ -19,8 +20,28 @@ export function HomeScreen({ onRoomSelect, onViewAllTrending, onViewAllRooms, on
   const { data: rooms = [], isLoading } = useRooms();
   const { data: profile } = useProfile();
   const featuredRooms = rooms.slice(0, 3);
-  const totalMessages = mockMessages.length;
-  const totalUsers = mockUsers.length + 1; // including dev user
+
+  const { data: totalMessages } = useQuery({
+    queryKey: ['stats','messages'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('messages')
+        .select('id', { count: 'exact', head: true });
+      if (error) throw error;
+      return count || 0;
+    }
+  });
+
+  const { data: totalUsers } = useQuery({
+    queryKey: ['stats','users'],
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from('profiles')
+        .select('id', { count: 'exact', head: true });
+      if (error) throw error;
+      return count || 0;
+    }
+  });
 
   return (
     <div className="p-4 pb-24 space-y-6 animate-fade-in">
@@ -107,11 +128,11 @@ export function HomeScreen({ onRoomSelect, onViewAllTrending, onViewAllRooms, on
             <p className="text-xs text-muted-foreground">Rooms</p>
           </div>
           <div>
-            <p className="text-2xl font-bold text-accent">{totalMessages}</p>
+            <p className="text-2xl font-bold text-accent">{totalMessages ?? 0}</p>
             <p className="text-xs text-muted-foreground">Messages</p>
           </div>
           <div>
-            <p className="text-2xl font-bold text-success">{totalUsers}</p>
+            <p className="text-2xl font-bold text-success">{totalUsers ?? 0}</p>
             <p className="text-xs text-muted-foreground">Members</p>
           </div>
         </div>

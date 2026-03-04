@@ -22,6 +22,39 @@ export function NameInput({ data, setData }: NameInputProps) {
         </p>
       </div>
 
+      <div className="flex justify-center gap-4">
+        <label className="inline-flex items-center space-x-2">
+          <input
+            type="radio"
+            name="gender"
+            value="male"
+            checked={data.gender === 'male'}
+            onChange={() => setData(prev => ({ ...prev, gender: 'male' }))}
+          />
+          <span>Male</span>
+        </label>
+        <label className="inline-flex items-center space-x-2">
+          <input
+            type="radio"
+            name="gender"
+            value="female"
+            checked={data.gender === 'female'}
+            onChange={() => setData(prev => ({ ...prev, gender: 'female' }))}
+          />
+          <span>Female</span>
+        </label>
+        <label className="inline-flex items-center space-x-2">
+          <input
+            type="radio"
+            name="gender"
+            value="other"
+            checked={data.gender === 'other'}
+            onChange={() => setData(prev => ({ ...prev, gender: 'other' }))}
+          />
+          <span>Other</span>
+        </label>
+      </div>
+
       <div className="text-left">
         <Label htmlFor="name" className="sr-only">Your name</Label>
         <Input
