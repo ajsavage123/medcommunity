@@ -10,6 +10,7 @@ import type { Database } from '@/integrations/supabase/types';
 // typed enums from generated types
 type UserType = Database['public']['Enums']['user_type'];
 type QualificationType = Database['public']['Enums']['qualification_type'];
+type DesignationType = Database['public']['Enums']['designation_type'];
 
 export interface MessageUser {
   id: string;
@@ -18,6 +19,7 @@ export interface MessageUser {
   gender?: 'male' | 'female' | 'other';
   userType: UserType | null;
   qualification: QualificationType | null;
+  designation: DesignationType | null;
   experienceYears: number;
 }
 
@@ -35,6 +37,7 @@ function transformRow(row: any): EnrichedMessage {
         gender: userProfile.gender as any,
         userType: userProfile.user_type as any,
         qualification: userProfile.qualification as any,
+        designation: userProfile.designation as any,
         experienceYears: getExperienceYears(userProfile.experience_start_date),
       }
     : undefined;
@@ -121,6 +124,7 @@ export function useMessages(roomId: string) {
                   gender: newProf.gender,
                   userType: newProf.user_type,
                   qualification: newProf.qualification,
+                  designation: newProf.designation,
                   experienceYears: getExperienceYears(newProf.experience_start_date),
                 },
               };

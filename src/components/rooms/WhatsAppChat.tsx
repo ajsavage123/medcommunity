@@ -207,8 +207,8 @@ function Bubble({
   const badge = useMemo(() => {
     if (showAnon || !msg.user) return null;
 
-    // Format label strictly to requested list
-    let rawLabel = (msg.user.qualification || msg.user.userType || 'Professional').toLowerCase();
+    // Use designation if available, otherwise fallback to userType
+    let rawLabel = (msg.user.designation || msg.user.userType || 'Professional').toLowerCase();
 
     let label = '';
     const themes = DESIGNATION_THEMES;

@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
+import { useProfile } from '@/hooks/useProfile';
 import Auth from "./pages/Auth";
 import Index from "./pages/Index";
 import Onboarding from "./pages/Onboarding";
@@ -17,43 +18,10 @@ const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
-  const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null);
-  const [checkingProfile, setCheckingProfile] = useState(true);
+  const { data: profile, isLoading: profileLoading } = useProfile();
 
-  useEffect(() => {
-    const checkOnboarding = async () => {
-      if (!user) {
-        setOnboardingComplete(null);
-        setCheckingProfile(false);
-        return;
-      }
-
-      try {
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('onboarding_completed')
-          // use user_id since profile.id is unrelated to auth.user.id
-          .eq('user_id', user.id)
-          .maybeSingle();
-
-        if (error) {
-          console.error('Supabase error fetching profile:', error);
-          setOnboardingComplete(false);
-        } else {
-          setOnboardingComplete(data?.onboarding_completed || false);
-        }
-      } catch (error) {
-        console.error('Error checking onboarding:', error);
-        setOnboardingComplete(false);
-      } finally {
-        setCheckingProfile(false);
-      }
-    };
-
-    checkOnboarding();
-  }, [user]);
-
-  if (loading || checkingProfile) {
+  // while we're waiting for auth or profile info just show skeleton
+  if (loading || profileLoading) {
     return (
       <div className="min-h-screen bg-background flex items-center justify-center">
         <div className="space-y-4 w-full max-w-md px-4">
@@ -69,7 +37,8 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/auth" replace />;
   }
 
-  if (!onboardingComplete) {
+  // redirect to onboarding unless we have a profile and onboarding has been completed
+  if (!profile?.onboardingCompleted) {
     return <Navigate to="/onboarding" replace />;
   }
 

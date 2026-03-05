@@ -43,8 +43,16 @@ export function useSalaryInsights(experienceYears?: number, sector?: string) {
 
         if (error) throw error;
 
+        // deduplicate by user - keep most recent entry
+        const deduped = (data || []).reduce<any[]>((acc, item) => {
+          const idx = acc.findIndex(a => a.user_id === item.user_id);
+          if (idx === -1) acc.push(item);
+          else if (new Date(item.created_at) > new Date(acc[idx].created_at)) acc[idx] = item;
+          return acc;
+        }, []);
+
         // Process and aggregate the data
-        const aggregated = aggregateSalaryData(data || [], experienceYears, sector);
+        const aggregated = aggregateSalaryData(deduped, experienceYears, sector);
         return aggregated;
       } catch (error) {
         console.error('Error fetching salary insights:', error);
@@ -162,7 +170,19 @@ export function useSalaryData() {
         .limit(100);
 
       if (error) throw error;
-      return data || [];
+      // map DB rows (snake_case) to camelCase expected by UI
+      return (data || []).map((r: any) => ({
+        id: r.id,
+        userId: r.user_id,
+        role: r.role,
+        sector: r.sector,
+        location: r.location,
+        salary: r.salary,
+        experienceYears: r.experience_years ?? r.experienceYears ?? 0,
+        currency: r.currency,
+        workingHours: r.working_hours ?? r.workingHours ?? 0,
+        createdAt: r.created_at,
+      }));
     },
     staleTime: 1000 * 60 * 5,
   });

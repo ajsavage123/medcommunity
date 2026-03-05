@@ -89,6 +89,12 @@ export function UserProfile() {
                 experienceYears={experienceYears}
               />
             </div>
+            {/* allow user to reopen onboarding wizard to edit their answers */}
+            <div className="mt-4">
+              <Button size="sm" variant="outline" onClick={() => window.location.assign('/onboarding')}>
+                Edit Profile
+              </Button>
+            </div>
 
             {/* Verification badges */}
             {(isVerified || isAdmin) && (

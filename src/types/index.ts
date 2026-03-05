@@ -7,6 +7,7 @@ export interface User {
   avatar?: string;
   gender?: 'male' | 'female';
   qualification?: string;
+  designation?: string;
   userType?: string;
   createdAt: Date;
 }

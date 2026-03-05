@@ -15,6 +15,7 @@ import { SalaryInsights } from '@/components/tools/SalaryInsights';
 import { UserProfile } from '@/components/profile/UserProfile';
 import { useRooms } from '@/hooks/useRooms';
 import { useTools } from '@/hooks/useTools';
+import { useProfile, getExperienceYears } from '@/hooks/useProfile';
 import { Room, Tool } from '@/types';
 import { TrendingUp, ArrowLeft } from 'lucide-react';
 import { Button } from '@/components/ui/button';
@@ -30,6 +31,7 @@ export default function Index() {
 
   const { data: rooms = [], isLoading: roomsLoading } = useRooms();
   const { data: tools = [], isLoading: toolsLoading } = useTools();
+  const { data: profile } = useProfile();
 
   // Handle Mobile Back Button
   useEffect(() => {
@@ -104,7 +106,11 @@ export default function Index() {
             </Button>
             <h1 className="text-lg font-bold text-foreground">Salary Insights</h1>
           </div>
-          <SalaryInsights />
+          <SalaryInsights 
+            userDesignation={profile?.designation} 
+            userSector={profile?.sector}
+            userExperienceYears={profile?.experienceStartDate ? getExperienceYears(profile.experienceStartDate) : undefined}
+          />
         </div>
       );
     }

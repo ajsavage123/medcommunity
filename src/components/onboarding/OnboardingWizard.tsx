@@ -1,10 +1,12 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { useAuth } from '@/contexts/AuthContext';
 import { useUpdateOnboardingProfile } from '@/hooks/useOnboarding';
 import { useSubmitSalaryData } from '@/hooks/useSalaryData';
+import { useProfile, getExperienceYears } from '@/hooks/useProfile';
+import { supabase } from '@/integrations/supabase/client';
 import { toast } from '@/hooks/use-toast';
 import { RoleSelection } from './steps/RoleSelection';
 import { EmployeeDetails } from './steps/EmployeeDetails';
@@ -17,12 +19,14 @@ import type { Database } from '@/integrations/supabase/types';
 type UserType = Database['public']['Enums']['user_type'];
 type QualificationType = Database['public']['Enums']['qualification_type'];
 type SectorType = Database['public']['Enums']['sector_type'];
+type DesignationType = Database['public']['Enums']['designation_type'];
 
 export interface OnboardingData {
   name: string;
   gender: 'male' | 'female' | 'other' | null;
   userType: UserType | null;
   isIntern: boolean;
+  designation: DesignationType | null;
   sector: SectorType | null;
   experienceYears: number;
   qualification: QualificationType | null;
@@ -35,13 +39,15 @@ export function OnboardingWizard() {
   const navigate = useNavigate();
   const { user } = useAuth();
   const updateProfile = useUpdateOnboardingProfile();
-  
+  const { data: profileData } = useProfile();
+
   const [step, setStep] = useState(0);
   const [data, setData] = useState<OnboardingData>({
     name: '',
     gender: null,
     userType: null,
     isIntern: false,
+    designation: null,
     sector: null,
     experienceYears: 0,
     qualification: null,
@@ -50,6 +56,9 @@ export function OnboardingWizard() {
 
   // add gender selection as part of name step (step 0); count doesn't change
   const totalSteps = data.userType === 'employee' || data.userType === 'student' ? 3 : 2;
+
+  // if the profile has been completed previously we treat this as an edit flow
+  const isEdit = !!profileData?.onboardingCompleted;
   const progress = ((step + 1) / totalSteps) * 100;
 
   const canProceed = () => {
@@ -60,7 +69,7 @@ export function OnboardingWizard() {
         return data.userType !== null;
       case 2:
         if (data.userType === 'employee') {
-          return data.sector && data.qualification && data.salary !== null;
+          return data.designation && data.sector && data.qualification && data.salary !== null;
         }
         if (data.userType === 'student') {
           return true; // isIntern is already set
@@ -91,6 +100,28 @@ export function OnboardingWizard() {
 
   const submitSalary = useSubmitSalaryData();
 
+  // if profile already exists we want to pre‑populate the wizard (allows editing later)
+  useEffect(() => {
+    if (!profileData) return;
+
+    // update form fields from profile; this will run on initial load and
+    // also if the user edits their profile via the wizard again
+    setData(prev => ({
+      name: profileData.name || prev.name,
+      gender: (profileData.gender as any) ?? prev.gender,
+      userType: profileData.userType,
+      // intern is a derivation of userType
+      isIntern: profileData.userType === 'intern',
+      designation: profileData.designation || prev.designation,
+      sector: profileData.sector || prev.sector,
+      experienceYears: profileData.experienceStartDate
+        ? getExperienceYears(profileData.experienceStartDate)
+        : prev.experienceYears,
+      qualification: profileData.qualification || prev.qualification,
+      salary: profileData.salary ?? prev.salary,
+    }));
+  }, [profileData]);
+
   const handleComplete = async () => {
     if (!user) return;
 
@@ -112,6 +143,7 @@ export function OnboardingWizard() {
         gender: data.gender,
         avatar_url: avatarUrl,
         userType: finalUserType,
+        designation: data.userType === 'employee' ? data.designation : null,
         sector: data.userType === 'employee' ? data.sector : null,
         qualification: data.userType === 'employee' ? data.qualification : null,
         salary: data.userType === 'employee' ? data.salary : null,
@@ -123,15 +155,23 @@ export function OnboardingWizard() {
       // optionally push salary post if user provided salary and employee
       if (data.userType === 'employee' && data.salary != null) {
         try {
-          await submitSalary.mutateAsync({
-            role: 'emt', // default until we add explicit role step
-            sector: data.sector || 'private',
-            location: '',
-            experienceYears: data.experienceYears,
-            salary: data.salary,
-            currency: 'INR',
-            workingHours: 12,
-          });
+          // only post if none exists for this user already
+          const { data: existing, error: fetchErr } = await supabase
+            .from('salary_posts')
+            .select('id')
+            .eq('user_id', user.id)
+            .single();
+          if (!fetchErr && !existing) {
+            await submitSalary.mutateAsync({
+              role: data.designation || 'emt', // use designation if available
+              sector: data.sector || 'private',
+              location: '',
+              experienceYears: data.experienceYears,
+              salary: data.salary,
+              currency: 'INR',
+              workingHours: 12,
+            });
+          }
         } catch (err) {
           // non-critical, just log
           console.warn('Failed to auto-submit salary post:', err);
@@ -181,7 +221,7 @@ export function OnboardingWizard() {
               Step {step + 1} of {totalSteps}
             </span>
             <span className="text-sm font-medium text-foreground">
-              {STEP_LABELS[step] || 'Complete'}
+              {STEP_LABELS[step] || (isEdit ? 'Update' : 'Complete')}
             </span>
           </div>
           <Progress value={progress} className="h-2" />
@@ -220,7 +260,7 @@ export function OnboardingWizard() {
               ) : (
                 <>
                   <Check className="w-4 h-4 mr-2" />
-                  Complete Setup
+                  {isEdit ? 'Save Changes' : 'Complete Setup'}
                 </>
               )}
             </Button>

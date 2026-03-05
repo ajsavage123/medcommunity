@@ -6,6 +6,7 @@ import type { Database } from '@/integrations/supabase/types';
 type UserType = Database['public']['Enums']['user_type'];
 type QualificationType = Database['public']['Enums']['qualification_type'];
 type SectorType = Database['public']['Enums']['sector_type'];
+type DesignationType = Database['public']['Enums']['designation_type'];
 
 interface Profile {
   id: string;
@@ -15,6 +16,7 @@ interface Profile {
   gender?: 'male' | 'female' | 'other';
   userType: UserType | null;
   qualification: QualificationType | null;
+  designation: DesignationType | null;
   sector: SectorType | null;
   salary: number | null;
   experienceStartDate: string | null;
@@ -57,6 +59,7 @@ export function useProfile() {
           gender: data.gender as 'male' | 'female' | 'other' | undefined,
           userType: data.user_type as UserType,
           qualification: data.qualification as QualificationType,
+          designation: data.designation as DesignationType,
           sector: data.sector as SectorType,
           salary: data.salary,
           experienceStartDate: data.experience_start_date,

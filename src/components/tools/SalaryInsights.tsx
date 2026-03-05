@@ -8,9 +8,18 @@ import { useSalaryData, useSubmitSalaryData } from '@/hooks/useSalaryData';
 import { cn } from '@/lib/utils';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
+import type { Database } from '@/integrations/supabase/types';
 
+type DesignationType = Database['public']['Enums']['designation_type'];
+type SectorType = Database['public']['Enums']['sector_type'];
 type FilterRole = 'all' | 'emt' | 'paramedic';
 type FilterSector = 'all' | 'private' | 'government' | 'ngo';
+
+interface SalaryInsightsProps {
+  userDesignation?: DesignationType | null;
+  userSector?: SectorType | null;
+  userExperienceYears?: number;
+}
 
 const formatSalary = (amount: number) => {
   if (amount >= 100000) return `₹${(amount / 100000).toFixed(1)}L`;
@@ -185,13 +194,48 @@ function SubmitModal({ onClose }: { onClose: () => void }) {
   );
 }
 
-export function SalaryInsights() {
-  const [roleFilter, setRoleFilter] = useState<FilterRole>('all');
-  const [sectorFilter, setSectorFilter] = useState<FilterSector>('all');
+export function SalaryInsights({ 
+  userDesignation, 
+  userSector, 
+  userExperienceYears 
+}: SalaryInsightsProps) {
+  const [roleFilter, setRoleFilter] = useState<FilterRole>(
+    userDesignation && (userDesignation === 'emt' || userDesignation === 'paramedic') 
+      ? (userDesignation as FilterRole) 
+      : 'all'
+  );
+  const [sectorFilter, setSectorFilter] = useState<FilterSector>(
+    userSector && (userSector === 'private' || userSector === 'government' || userSector === 'ngo') 
+      ? (userSector as FilterSector) 
+      : 'all'
+  );
   const [showSubmit, setShowSubmit] = useState(false);
-  const { data: salaryData = [], isLoading } = useSalaryData();
+  const { data: salaryData = [], isLoading, isError, error } = useSalaryData();
 
-  const filteredData = salaryData.filter(s => {
+  if (isError) {
+    return (
+      <div className="p-8 text-center text-destructive">
+        <p className="font-semibold">Failed to load salary data.</p>
+        <p className="text-sm">{(error as any)?.message || 'Please try again later.'}</p>
+      </div>
+    );
+  }
+
+  // deduplicate by userId, keep most recent post per user
+  const dedupedData = salaryData.reduce<SalaryPost[]>((acc, item) => {
+    const existingIndex = acc.findIndex(a => a.userId === item.userId);
+    if (existingIndex === -1) {
+      acc.push(item);
+    } else {
+      // replace if this item is newer
+      if (item.createdAt.getTime() > acc[existingIndex].createdAt.getTime()) {
+        acc[existingIndex] = item;
+      }
+    }
+    return acc;
+  }, []);
+
+  const filteredData = dedupedData.filter(s => {
     if (roleFilter !== 'all' && s.role !== roleFilter) return false;
     if (sectorFilter !== 'all' && s.sector !== sectorFilter) return false;
     return true;
@@ -231,6 +275,19 @@ export function SalaryInsights() {
         <Skeleton className="h-16 w-full" />
         <Skeleton className="h-24 w-full" />
         <Skeleton className="h-32 w-full" />
+      </div>
+    );
+  }
+
+  // show full empty state when there is absolutely no data
+  if (!isLoading && dedupedData.length === 0) {
+    return (
+      <div className="p-8 text-center space-y-4">
+        <p className="text-lg font-semibold text-foreground">No salary data yet</p>
+        <p className="text-sm text-muted-foreground">Be the first to share anonymously.</p>
+        <Button onClick={() => setShowSubmit(true)} className="mt-4">
+          Share Mine
+        </Button>
       </div>
     );
   }

@@ -2,12 +2,13 @@ import { Label } from '@/components/ui/label';
 import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Input } from '@/components/ui/input';
 import { cn } from '@/lib/utils';
-import { Building2, GraduationCap, Clock, IndianRupee } from 'lucide-react';
+import { Building2, GraduationCap, Clock, IndianRupee, Briefcase } from 'lucide-react';
 import type { OnboardingData } from '../OnboardingWizard';
 import type { Database } from '@/integrations/supabase/types';
 
 type SectorType = Database['public']['Enums']['sector_type'];
 type QualificationType = Database['public']['Enums']['qualification_type'];
+type DesignationType = Database['public']['Enums']['designation_type'];
 
 interface EmployeeDetailsProps {
   data: OnboardingData;
@@ -24,6 +25,47 @@ export function EmployeeDetails({ data, setData }: EmployeeDetailsProps) {
         <p className="text-muted-foreground mt-2">
           This helps us personalize your experience
         </p>
+      </div>
+
+      {/* Designation Selection */}
+      <div className="space-y-3">
+        <Label className="flex items-center gap-2 text-sm font-medium">
+          <Briefcase className="w-4 h-4 text-primary" />
+          What's your designation?
+        </Label>
+        <RadioGroup
+          value={data.designation || ''}
+          onValueChange={(value: DesignationType) => setData(prev => ({ ...prev, designation: value }))}
+          className="space-y-2"
+        >
+          {[
+            { value: 'paramedic' as DesignationType, label: 'Paramedic' },
+            { value: 'emt' as DesignationType, label: 'EMT' },
+            { value: 'emr' as DesignationType, label: 'EMR' },
+            { value: 'advanced_emt' as DesignationType, label: 'Advanced EMT' },
+            { value: 'advanced_paramedic' as DesignationType, label: 'Advanced Paramedic' },
+            { value: 'instructor' as DesignationType, label: 'Instructor' },
+            { value: 'other' as DesignationType, label: 'Other' },
+          ].map((option) => (
+            <Label
+              key={option.value}
+              className={cn(
+                'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all',
+                data.designation === option.value
+                  ? 'border-primary bg-primary/5'
+                  : 'border-border hover:border-primary/50'
+              )}
+            >
+              <RadioGroupItem value={option.value} />
+              <span className={cn(
+                'font-medium',
+                data.designation === option.value ? 'text-primary' : 'text-foreground'
+              )}>
+                {option.label}
+              </span>
+            </Label>
+          ))}
+        </RadioGroup>
       </div>
 
       {/* Sector Selection */}

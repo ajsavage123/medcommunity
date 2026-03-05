@@ -2,6 +2,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useAuth } from '@/contexts/AuthContext';
 import { supabase } from '@/integrations/supabase/client';
 import { SalaryPost } from '@/types';
+import { useEffect } from 'react';
 
 export function useSalaryData() {
   const queryClient = useQueryClient();
@@ -9,31 +10,26 @@ export function useSalaryData() {
   const result = useQuery({
     queryKey: ['salary-posts'],
     queryFn: async (): Promise<SalaryPost[]> => {
-      try {
-        const { data, error } = await supabase
-          .from('salary_posts')
-          .select('*')
-          .order('created_at', { ascending: false })
-          .limit(500);
+      const { data, error } = await supabase
+        .from('salary_posts')
+        .select('*')
+        .order('created_at', { ascending: false })
+        .limit(500);
 
-        if (error) throw error;
+      if (error) throw error;
 
-        return (data || []).map((item) => ({
-          id: item.id,
-          userId: item.user_id,
-          role: item.role,
-          sector: item.sector,
-          location: item.location,
-          salary: item.salary,
-          experienceYears: item.experience_years,
-          currency: item.currency || 'INR',
-          workingHours: item.working_hours || 12,
-          createdAt: new Date(item.created_at),
-        }));
-      } catch (error) {
-        console.error('Error fetching salary data:', error);
-        return [];
-      }
+      return (data || []).map((item) => ({
+        id: item.id,
+        userId: item.user_id,
+        role: item.role,
+        sector: item.sector,
+        location: item.location,
+        salary: item.salary,
+        experienceYears: item.experience_years,
+        currency: item.currency || 'INR',
+        workingHours: item.working_hours || 12,
+        createdAt: new Date(item.created_at),
+      }));
     },
     staleTime: 1000 * 60 * 5, // 5 minutes
   });

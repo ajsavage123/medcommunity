@@ -12,8 +12,8 @@ export function TrendingBanner({ onMessageClick }: TrendingBannerProps) {
   const { data: messages = [], isLoading } = useTrendingMessages(10);
   const [currentIndex, setCurrentIndex] = useState(0);
 
-  // Filter to only show messages with upvotes or pinned
-  const trendingMessages = messages.filter(m => m.isPinned || m.upvotes > 0);
+  // hook already returns a filtered list (likes/replies/pinned), so just use it
+  const trendingMessages = messages;
 
   useEffect(() => {
     if (trendingMessages.length <= 1) return;
@@ -34,7 +34,12 @@ export function TrendingBanner({ onMessageClick }: TrendingBannerProps) {
   }
 
   if (trendingMessages.length === 0) {
-    return null;
+    // show a light placeholder so the section doesn't disappear entirely
+    return (
+      <div className="bg-gradient-to-r from-accent/10 to-primary/10 rounded-xl p-3 text-center text-sm text-muted-foreground">
+        No trending posts yet – upvote or reply to messages to get featured!
+      </div>
+    );
   }
 
   const currentMessage = trendingMessages[currentIndex];

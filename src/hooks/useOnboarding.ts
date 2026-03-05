@@ -6,12 +6,14 @@ import type { Database } from '@/integrations/supabase/types';
 type UserType = Database['public']['Enums']['user_type'];
 type SectorType = Database['public']['Enums']['sector_type'];
 type QualificationType = Database['public']['Enums']['qualification_type'];
+type DesignationType = Database['public']['Enums']['designation_type'];
 
 interface OnboardingProfileData {
   name: string;
   gender?: 'male' | 'female' | 'other' | null;
   avatar_url?: string | null;
   userType: UserType | null;
+  designation: DesignationType | null;
   sector: SectorType | null;
   qualification: QualificationType | null;
   salary: number | null;
@@ -37,6 +39,7 @@ export function useUpdateOnboardingProfile() {
           gender: data.gender,
           avatar_url: data.avatar_url ?? null,
           user_type: data.userType,
+          designation: data.designation,
           sector: data.sector,
           qualification: data.qualification,
           salary: data.salary,
@@ -50,7 +53,9 @@ export function useUpdateOnboardingProfile() {
       return { success: true };
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['profile'] });
+      if (user?.id) {
+        queryClient.invalidateQueries({ queryKey: ['profile', user.id] });
+      }
     },
   });
 }
