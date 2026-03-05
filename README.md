@@ -22,6 +22,36 @@ The EMR community needs a central hub for localized salary data, certification t
 *   **PWA Support:** Added full-screen standalone mode for a premium native app experience.
 *   **Mobile Optimizations:** Fixed keyboard-layout interactions and hardware back-button support.
 
-## 🛡 License
+## � Deployment
+
+### Deploy to Vercel (Recommended)
+
+1. **Push to GitHub** - Ensure your code is on the `main` branch
+2. **Connect to Vercel** - Go to [vercel.com](https://vercel.com) and create a new project from your GitHub repository
+3. **Set Environment Variables** - In Vercel project settings, add:
+   - `VITE_SUPABASE_URL` - Your Supabase project URL
+   - `VITE_SUPABASE_PUBLISHABLE_KEY` - Your Supabase public anon key
+   - `VITE_SUPABASE_PROJECT_ID` - Your Supabase project ID (optional)
+
+4. **Deploy** - Push to GitHub and Vercel will automatically build and deploy
+
+For detailed instructions, see [VERCEL_DEPLOYMENT.md](VERCEL_DEPLOYMENT.md)
+
+### Local Development
+
+1. Copy `.env.example` to `.env.local`:
+   ```bash
+   cp .env.example .env.local
+   ```
+
+2. Fill in your Supabase credentials in `.env.local`
+
+3. Start the development server:
+   ```bash
+   npm install
+   npm run dev
+   ```
+
+## �🛡 License
 
 This project is private and strictly proprietary to CODEBLUER.
