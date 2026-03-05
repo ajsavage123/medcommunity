@@ -7,7 +7,7 @@ import {
 import { Room } from '@/types';
 import { cn } from '@/lib/utils';
 import { format, isToday, isYesterday, isSameDay } from 'date-fns';
-import { useMessages, useSendMessage, EnrichedMessage } from '@/hooks/useMessages';
+import { useMessages, useSendMessage, EnrichedMessage, useDeleteMessage, useTogglePinMessage } from '@/hooks/useMessages';
 import { useAuth } from '@/contexts/AuthContext';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
@@ -370,8 +370,6 @@ export function WhatsAppChat({ room, onBack }: WhatsAppChatProps) {
   const [text, setText] = useState('');
   const [replyingTo, setReplyingTo] = useState<EnrichedMessage | null>(null);
   const [ctx, setCtx] = useState<CtxMenu | null>(null);
-  const [pinnedIds, setPinnedIds] = useState<Set<string>>(new Set());
-  const [showGallery, setShowGallery] = useState(false);
 
   // Search state
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -386,9 +384,14 @@ export function WhatsAppChat({ room, onBack }: WhatsAppChatProps) {
   const { user } = useAuth();
   const { data: messages = [], isLoading } = useMessages(room.id);
   const sendMessage = useSendMessage();
+  const deleteMessage = useDeleteMessage();
+  const togglePin = useTogglePinMessage();
 
   const theme = useMemo(() => ROOM_THEMES[room.type] || ROOM_THEMES.general, [room.type]);
   const lastMsgId = useRef<string | null>(null);
+
+  // Get pinned messages from the actual message data
+  const pinnedMessages = useMemo(() => messages.filter(m => m.isPinned), [messages]);
 
   // Handle Receiving Message Sounds
   useEffect(() => {
@@ -458,12 +461,12 @@ export function WhatsAppChat({ room, onBack }: WhatsAppChatProps) {
         setSearchQuery={setSearchQuery}
       />
 
-      {pinnedIds.size > 0 && !isSearchOpen && (
+      {pinnedMessages.length > 0 && !isSearchOpen && (
         <div
           className="flex items-center gap-3 px-4 py-2 bg-white border-b border-slate-200 z-20 cursor-pointer hover:bg-slate-50 transition-all shadow-sm"
           onClick={() => {
-            const lastId = Array.from(pinnedIds).pop();
-            const el = document.getElementById(lastId!);
+            const lastPinned = pinnedMessages[pinnedMessages.length - 1];
+            const el = document.getElementById(lastPinned.id);
             el?.scrollIntoView({ behavior: 'smooth', block: 'center' });
             el?.classList.add('animate-pulse-gold');
             setTimeout(() => el?.classList.remove('animate-pulse-gold'), 3000);
@@ -473,11 +476,15 @@ export function WhatsAppChat({ room, onBack }: WhatsAppChatProps) {
           <div className="flex-1 min-w-0">
             <p className="text-[10px] font-bold text-orange-600 uppercase leading-none mb-0.5">Pinned Message</p>
             <p className="text-[13px] text-slate-700 font-medium truncate">
-              {messages.find(m => m.id === Array.from(pinnedIds).pop())?.content}
+              {pinnedMessages[pinnedMessages.length - 1]?.content}
             </p>
           </div>
           <button
-            onClick={(e) => { e.stopPropagation(); setPinnedIds(new Set()); }}
+            onClick={(e) => { 
+              e.stopPropagation(); 
+              const lastPinned = pinnedMessages[pinnedMessages.length - 1];
+              togglePin.mutate({ messageId: lastPinned.id, isPinned: true, roomId: room.id });
+            }}
             className="p-1 rounded-full hover:bg-slate-100 text-slate-400"
           >
             <X className="w-4 h-4" />
@@ -506,7 +513,7 @@ export function WhatsAppChat({ room, onBack }: WhatsAppChatProps) {
               isAnonymousRoom={room.isAnonymous ?? false}
               showName={m.showName}
               showAvatar={m.showAvatar}
-              isPinned={pinnedIds.has(m.id)}
+              isPinned={m.isPinned}
               theme={theme}
               onCtx={(e, msg) => setCtx({ x: e.clientX || e.pageX || 100, y: e.clientY || e.pageY || 200, msg })}
               onReply={() => setReplyingTo(m)}
@@ -643,21 +650,33 @@ export function WhatsAppChat({ room, onBack }: WhatsAppChatProps) {
             {user?.id === ctx.msg.userId && (
               <button
                 onClick={() => {
-                  setPinnedIds(p => { const s = new Set(p); s.has(ctx.msg.id) ? s.delete(ctx.msg.id) : s.add(ctx.msg.id); return s; });
+                  togglePin.mutate({ messageId: ctx.msg.id, isPinned: ctx.msg.isPinned || false, roomId: room.id });
                   setCtx(null);
-                  toast({ title: pinnedIds.has(ctx.msg.id) ? 'Message unpinned' : 'Message pinned successfully' });
+                  toast({ title: ctx.msg.isPinned ? 'Message unpinned' : 'Message pinned successfully' });
                 }}
                 className="w-full px-4 py-3 text-left text-[14px] flex items-center gap-3 hover:bg-slate-50 transition-colors text-slate-700 font-bold"
               >
-                <Pin className={cn("w-4 h-4", pinnedIds.has(ctx.msg.id) ? "text-red-500" : "text-orange-500")} />
-                {pinnedIds.has(ctx.msg.id) ? 'Unpin' : 'Pin'}
+                <Pin className={cn("w-4 h-4", ctx.msg.isPinned ? "text-red-500" : "text-orange-500")} />
+                {ctx.msg.isPinned ? 'Unpin' : 'Pin'}
               </button>
             )}
             <button onClick={() => { navigator.clipboard.writeText(ctx.msg.content); setCtx(null); toast({ title: 'Copied' }); }} className="w-full px-4 py-3 text-left text-[14px] flex items-center gap-3 hover:bg-slate-50 transition-colors text-slate-700 font-bold">
               <Copy className="w-4 h-4 text-slate-500" /> Copy
             </button>
             <div className="p-1">
-              <button className="w-full px-3 py-2 text-left text-[14px] flex items-center gap-3 bg-red-50 hover:bg-red-100 rounded-xl transition-all text-red-600 font-bold">
+              <button
+                onClick={() => {
+                  if (user?.id === ctx.msg.userId) {
+                    deleteMessage.mutate({ messageId: ctx.msg.id, roomId: room.id });
+                    setCtx(null);
+                    toast({ title: 'Message deleted' });
+                  } else {
+                    toast({ title: 'You can only delete your own messages', variant: 'destructive' });
+                    setCtx(null);
+                  }
+                }}
+                className="w-full px-3 py-2 text-left text-[14px] flex items-center gap-3 bg-red-50 hover:bg-red-100 rounded-xl transition-all text-red-600 font-bold"
+              >
                 <Trash2 className="w-4 h-4" /> Delete
               </button>
             </div>

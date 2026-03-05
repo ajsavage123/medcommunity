@@ -91,6 +91,11 @@ export function useMessages(roomId: string) {
         queryClient.setQueryData(['messages', roomId], (old: any[]) =>
           old?.map(m => (m.id === updated.id ? updated : m)) || []
         );
+      } else if (payload.eventType === 'DELETE') {
+        const deletedId = payload.old.id;
+        queryClient.setQueryData(['messages', roomId], (old: any[]) =>
+          old?.filter(m => m.id !== deletedId) || []
+        );
       }
     });
 
@@ -245,6 +250,46 @@ export function useLikeMessage() {
     onSuccess: (_, variables) => {
       queryClient.invalidateQueries({ queryKey: ['messages', variables.roomId] });
       queryClient.invalidateQueries({ queryKey: ['message-likes'] });
+    },
+  });
+}
+
+export function useDeleteMessage() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ messageId, roomId }: { messageId: string; roomId: string }) => {
+      const { error } = await supabase
+        .from('messages')
+        .delete()
+        .eq('id', messageId);
+      if (error) throw error;
+      return { messageId, roomId };
+    },
+    onSuccess: (_, variables) => {
+      // Invalidate messages cache for this room
+      queryClient.invalidateQueries({ queryKey: ['messages', variables.roomId] });
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
+    },
+  });
+}
+
+export function useTogglePinMessage() {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ messageId, isPinned, roomId }: { messageId: string; isPinned: boolean; roomId: string }) => {
+      const { error } = await supabase
+        .from('messages')
+        .update({ is_pinned: !isPinned })
+        .eq('id', messageId);
+      if (error) throw error;
+      return { messageId, roomId };
+    },
+    onSuccess: (_, variables) => {
+      // Invalidate messages cache for this room
+      queryClient.invalidateQueries({ queryKey: ['messages', variables.roomId] });
+      queryClient.invalidateQueries({ queryKey: ['rooms'] });
     },
   });
 }
