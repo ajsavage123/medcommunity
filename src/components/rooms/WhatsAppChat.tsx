@@ -16,6 +16,8 @@ import { mockUsers } from '@/data/mockData';
 import { sounds } from '@/lib/sounds';
 import { User } from '@/types';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { getBadgeInfo } from '@/lib/badges';
+import { getExperienceYears } from '@/hooks/useProfile';
 
 // ─── Helpers ────────────────────────────────────────────────────────────────
 
@@ -203,27 +205,37 @@ function Bubble({
   const displayName = showAnon ? 'Anonymous' : (msg.user?.name ?? 'User');
   const avatarUrl = useMemo(() => msg.user?.avatar || getClayAvatar(msg.userId, msg.user?.gender as any, msg.user?.name), [msg.userId, msg.user?.avatar, msg.user?.gender, msg.user?.name]);
 
-  // Designation Badge Logic
+  // Designation Badge Logic with Experience Years
   const badge = useMemo(() => {
     if (showAnon || !msg.user) return null;
 
-    // Use designation if available, otherwise fallback to userType
-    let rawLabel = (msg.user.designation || msg.user.userType || 'Professional').toLowerCase();
+    // Use the same badge system as profile to ensure consistency
+    const badgeInfo = getBadgeInfo(
+      msg.user.userType as any,
+      msg.user.qualification as any,
+      msg.user.experienceYears
+    );
 
-    let label = '';
+    if (!badgeInfo) return null;
+
+    let theme = { bg: 'bg-slate-50/80', text: 'text-slate-600', border: 'border-slate-200/50', shadow: 'shadow-slate-900/5' };
     const themes = DESIGNATION_THEMES;
-    let theme = { bg: 'bg-slate-50/80', text: 'text-slate-600', border: 'border-slate-200/50', shadow: 'shadow-slate-900/5' }; // Default theme
 
-    if (rawLabel === 'hr') { label = 'HR / RECRUITER'; theme = themes.hr; }
-    else if (rawLabel === 'paramedic') { label = 'PARAMEDIC'; theme = themes.paramedic; }
-    else if (rawLabel === 'emr') { label = 'EMR'; theme = themes.emr; }
-    else if (rawLabel === 'emt') { label = 'EMT'; theme = themes.emt; }
-    else if (rawLabel.includes('advance') && rawLabel.includes('emt')) { label = 'ADVANCE EMT'; theme = themes.advance_emt; }
-    else if (rawLabel.includes('advance') && rawLabel.includes('paramedic')) { label = 'ADVANCE PARAMEDIC'; theme = themes.advance_paramedic; }
-    else if (rawLabel === 'instructor') { label = 'INSTRUCTOR'; theme = themes.instructor; }
-    else { label = rawLabel.toUpperCase().replace(/_/g, ' '); }
+    // Map badge info to theme using userType and qualification
+    const userTypeStr = (msg.user.userType || '').toLowerCase();
+    const qualStr = (msg.user.qualification || '').toLowerCase();
 
-    return { label, theme };
+    if (userTypeStr === 'student') theme = themes.emr || theme;
+    else if (userTypeStr === 'intern') theme = themes.emr || theme;
+    else if (userTypeStr === 'employee') {
+      if (qualStr.includes('bsc')) theme = themes.paramedic || theme;
+      else if (qualStr.includes('pg')) theme = themes.advance_emt || theme;
+      else if (qualStr.includes('diploma')) theme = themes.emt || theme;
+    }
+    else if (userTypeStr === 'instructor') theme = themes.instructor || theme;
+    else if (userTypeStr === 'hr') theme = themes.hr || theme;
+
+    return { label: badgeInfo.label, theme };
   }, [msg.user, showAnon]);
 
   // Swipe-to-reply simulation

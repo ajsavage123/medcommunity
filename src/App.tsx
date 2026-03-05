@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "@/contexts/AuthContext";
 import { useProfile } from '@/hooks/useProfile';
+import { useRealtimeSync } from '@/hooks/useRealtimeSync';
 import Auth from "./pages/Auth";
 import Index from "./pages/Index";
 import Onboarding from "./pages/Onboarding";
@@ -19,6 +20,8 @@ const queryClient = new QueryClient();
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfile();
+  // Initialize real-time sync globally
+  useRealtimeSync();
 
   // while we're waiting for auth or profile info just show skeleton
   if (loading || profileLoading) {
