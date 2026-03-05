@@ -370,6 +370,7 @@ export function WhatsAppChat({ room, onBack }: WhatsAppChatProps) {
   const [text, setText] = useState('');
   const [replyingTo, setReplyingTo] = useState<EnrichedMessage | null>(null);
   const [ctx, setCtx] = useState<CtxMenu | null>(null);
+  const [showGallery, setShowGallery] = useState(false);
 
   // Search state
   const [isSearchOpen, setIsSearchOpen] = useState(false);
