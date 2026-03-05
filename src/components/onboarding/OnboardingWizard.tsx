@@ -19,14 +19,12 @@ import type { Database } from '@/integrations/supabase/types';
 type UserType = Database['public']['Enums']['user_type'];
 type QualificationType = Database['public']['Enums']['qualification_type'];
 type SectorType = Database['public']['Enums']['sector_type'];
-type DesignationType = Database['public']['Enums']['designation_type'];
 
 export interface OnboardingData {
   name: string;
   gender: 'male' | 'female' | 'other' | null;
   userType: UserType | null;
   isIntern: boolean;
-  designation: DesignationType | null;
   sector: SectorType | null;
   experienceYears: number;
   qualification: QualificationType | null;
@@ -47,7 +45,6 @@ export function OnboardingWizard() {
     gender: null,
     userType: null,
     isIntern: false,
-    designation: null,
     sector: null,
     experienceYears: 0,
     qualification: null,
@@ -69,7 +66,7 @@ export function OnboardingWizard() {
         return data.userType !== null;
       case 2:
         if (data.userType === 'employee') {
-          return data.designation && data.sector && data.qualification && data.salary !== null;
+          return data.sector && data.qualification && data.salary !== null;
         }
         if (data.userType === 'student') {
           return true; // isIntern is already set
@@ -112,7 +109,6 @@ export function OnboardingWizard() {
       userType: profileData.userType,
       // intern is a derivation of userType
       isIntern: profileData.userType === 'intern',
-      designation: profileData.designation || prev.designation,
       sector: profileData.sector || prev.sector,
       experienceYears: profileData.experienceStartDate
         ? getExperienceYears(profileData.experienceStartDate)
@@ -143,7 +139,6 @@ export function OnboardingWizard() {
         gender: data.gender,
         avatar_url: avatarUrl,
         userType: finalUserType,
-        designation: data.userType === 'employee' ? data.designation : null,
         sector: data.userType === 'employee' ? data.sector : null,
         qualification: data.userType === 'employee' ? data.qualification : null,
         salary: data.userType === 'employee' ? data.salary : null,
@@ -163,7 +158,7 @@ export function OnboardingWizard() {
             .single();
           if (!fetchErr && !existing) {
             await submitSalary.mutateAsync({
-              role: data.designation || 'emt', // use designation if available
+              role: 'emt', // default until we add explicit role step
               sector: data.sector || 'private',
               location: '',
               experienceYears: data.experienceYears,
