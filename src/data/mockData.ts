@@ -2,7 +2,7 @@ import { Room, Message, TrendingPost, User, Tool, SalaryPost, JobPost } from '@/
 
 export const currentUser: User = {
   id: 'user-1',
-  name: 'Alex Rivera',
+  name: 'Arjun Mehta',
   role: 'verified',
   createdAt: new Date('2024-01-15'),
 };
@@ -92,13 +92,13 @@ export const systemRooms: Room[] = [
 ];
 
 export const mockUsers: User[] = [
-  { id: 'user-2', name: 'Jordan Chen', role: 'verified', gender: 'male', qualification: 'paramedic', createdAt: new Date() },
-  { id: 'user-3', name: 'Sam Martinez', role: 'user', gender: 'female', qualification: 'emt', createdAt: new Date() },
-  { id: 'user-4', name: 'Riley Thompson', role: 'paid', gender: 'male', qualification: 'advance_emt', createdAt: new Date() },
-  { id: 'user-5', name: 'Morgan Lee', role: 'user', gender: 'female', qualification: 'emr', createdAt: new Date() },
-  { id: 'user-6', name: 'Casey Wong', role: 'verified', gender: 'male', qualification: 'instructor', createdAt: new Date() },
-  { id: 'user-7', name: 'Taylor Kim', role: 'user', gender: 'female', qualification: 'hr', createdAt: new Date() },
-  { id: 'user-8', name: 'Jamie Patel', role: 'paid', gender: 'male', qualification: 'paramedic', createdAt: new Date() },
+  { id: 'user-2', name: 'Vikram Sethi', role: 'verified', gender: 'male', qualification: 'paramedic', createdAt: new Date() },
+  { id: 'user-3', name: 'Priya Das', role: 'user', gender: 'female', qualification: 'emt', createdAt: new Date() },
+  { id: 'user-4', name: 'Rohan Gupta', role: 'paid', gender: 'male', qualification: 'advance_emt', createdAt: new Date() },
+  { id: 'user-5', name: 'Anjali Singh', role: 'user', gender: 'female', qualification: 'emr', createdAt: new Date() },
+  { id: 'user-6', name: 'Rajesh Pillai', role: 'verified', gender: 'male', qualification: null, createdAt: new Date() },
+  { id: 'user-7', name: 'Sneha Reddy', role: 'user', gender: 'female', qualification: null, createdAt: new Date() },
+  { id: 'user-8', name: 'Karan Patel', role: 'paid', gender: 'male', qualification: 'paramedic', createdAt: new Date() },
 ];
 
 const now = Date.now();

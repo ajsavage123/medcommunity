@@ -7,8 +7,15 @@ import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
 import { UserBadge } from './UserBadge';
 import { AvatarUploadDialog } from './AvatarUploadDialog';
+import { SavedPosts } from './SavedPosts';
+import { MyRooms } from './MyRooms';
+import { PrivacySafety } from './PrivacySafety';
+import { HelpSupport } from './HelpSupport';
+import { NotificationsPage } from '@/components/notifications/NotificationsPage';
 import { cn } from '@/lib/utils';
 import { getClayAvatar } from '@/lib/avatars';
+
+type ProfileSubPage = 'saved-posts' | 'my-rooms' | 'notifications' | 'privacy' | 'help' | null;
 
 export function UserProfile() {
   const { user, signOut } = useAuth();
@@ -16,7 +23,8 @@ export function UserProfile() {
   const { data: roles = [], isLoading: rolesLoading } = useUserRoles();
   const [showAvatarUpload, setShowAvatarUpload] = useState(false);
   const [isEditingBio, setIsEditingBio] = useState(false);
-  const [bio, setBio] = useState('Passionate about pre-hospital care and continuous learning. Let’s connect!');
+  const [bio, setBio] = useState('Passionate about pre-hospital care and continuous learning. Let\'s connect!');
+  const [subPage, setSubPage] = useState<ProfileSubPage>(null);
 
   const handleSignOut = async () => {
     try {
@@ -29,21 +37,27 @@ export function UserProfile() {
 
   const isLoading = profileLoading || rolesLoading;
   const experienceYears = profile?.experienceStartDate ? getExperienceYears(profile.experienceStartDate) : 0;
-
   const isVerified = roles.includes('verified');
   const isAdmin = roles.includes('admin');
 
+  // Sub-page routing
+  if (subPage === 'saved-posts') return <SavedPosts onBack={() => setSubPage(null)} />;
+  if (subPage === 'my-rooms')    return <MyRooms onBack={() => setSubPage(null)} />;
+  if (subPage === 'notifications') return <NotificationsPage onBack={() => setSubPage(null)} />;
+  if (subPage === 'privacy')    return <PrivacySafety onBack={() => setSubPage(null)} />;
+  if (subPage === 'help')       return <HelpSupport onBack={() => setSubPage(null)} />;
+
   const menuItems = [
-    { icon: Bookmark, label: 'Saved Posts' },
-    { icon: MessageSquare, label: 'My Rooms' },
-    { icon: Bell, label: 'Notifications' },
-    { icon: Shield, label: 'Privacy & Safety' },
-    { icon: Settings, label: 'Settings' },
-    { icon: HelpCircle, label: 'Help & Support' },
+    { icon: Bookmark,     label: 'Saved Posts',      action: () => setSubPage('saved-posts') },
+    { icon: MessageSquare,label: 'My Rooms',          action: () => setSubPage('my-rooms') },
+    { icon: Bell,         label: 'Notifications',     action: () => setSubPage('notifications') },
+    { icon: Shield,       label: 'Privacy & Safety',  action: () => setSubPage('privacy') },
+    { icon: Settings,     label: 'Settings',          action: () => toast({ title: 'Settings', description: 'Coming soon!', duration: 2000 }) },
+    { icon: HelpCircle,   label: 'Help & Support',    action: () => setSubPage('help') },
   ];
 
   return (
-    <div className="p-4 space-y-6 animate-fade-in">
+    <div className="p-4 space-y-6 animate-fade-in pb-24">
       {/* Profile Header */}
       <div className="flex flex-col items-center text-center">
         {isLoading ? (
@@ -89,6 +103,7 @@ export function UserProfile() {
                 experienceYears={experienceYears}
               />
             </div>
+
             {/* allow user to reopen onboarding wizard to edit their answers */}
             <div className="mt-4">
               <Button size="sm" variant="outline" onClick={() => window.location.assign('/onboarding')}>
@@ -184,6 +199,7 @@ export function UserProfile() {
         {menuItems.map((item) => (
           <button
             key={item.label}
+            onClick={item.action}
             className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-muted transition-colors group"
           >
             <item.icon className="w-5 h-5 text-muted-foreground group-hover:text-foreground transition-colors" />

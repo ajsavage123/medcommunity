@@ -18,6 +18,7 @@ export interface Profile {
   updatedAt: string;
 }
 
+
 export function useRealtimeProfile() {
   const { user } = useAuth();
   const [profile, setProfile] = useState<Profile | null>(null);
@@ -165,6 +166,29 @@ export function useRealtimeNotifications() {
             setNotifications((prev) => [newNotification, ...prev]);
             if (!newNotification.read) {
               setUnreadCount((prev) => prev + 1);
+              
+              // Push Notification logic
+              if ('Notification' in window) {
+                if (Notification.permission === 'granted') {
+                  const n = new Notification(newNotification.title, {
+                    body: newNotification.description,
+                    icon: '/favicon.ico'
+                  });
+                  n.onclick = () => { window.focus(); };
+                } else if (Notification.permission !== 'denied') {
+                  Notification.requestPermission();
+                }
+              }
+
+              // Play professional notification sound
+              import('@/lib/sounds').then(({ sounds }) => {
+                sounds.playNotification();
+              });
+
+              toast({
+                title: newNotification.title,
+                description: newNotification.description,
+              });
             }
           }
         }

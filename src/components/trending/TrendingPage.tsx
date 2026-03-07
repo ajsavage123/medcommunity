@@ -8,6 +8,9 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { Skeleton } from '@/components/ui/skeleton';
 import { Room } from '@/types';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { UserProfileDrawer } from '@/components/profile/UserProfileDrawer';
+import { getClayAvatar } from '@/lib/avatars';
 
 type SortMode = 'hot' | 'top' | 'new' | 'pinned';
 
@@ -38,12 +41,14 @@ interface TrendingPostCardProps {
     message: TrendingMessage;
     rank: number;
     onViewInRoom: (message: TrendingMessage) => void;
+    onViewProfile: (user: any) => void;
 }
 
-function TrendingPostCard({ message, rank, onViewInRoom }: TrendingPostCardProps) {
+function TrendingPostCard({ message, rank, onViewInRoom, onViewProfile }: TrendingPostCardProps) {
     const scoreColor = getScoreColor(message.score);
     const roomColor = ROOM_TYPE_COLORS[message.roomType] || 'bg-gray-100 text-gray-700';
     const timeAgo = formatDistanceToNow(message.createdAt, { addSuffix: true });
+    const avatarUrl = message.user ? (message.user as any).avatar || getClayAvatar(message.user.id, (message.user as any).gender, message.user.name) : '';
 
     return (
         <div className={cn(
@@ -74,21 +79,38 @@ function TrendingPostCard({ message, rank, onViewInRoom }: TrendingPostCardProps
             {/* Content */}
             <div className="px-4 py-2">
                 {/* Author */}
-                <div className="flex items-center gap-1.5 mb-1.5">
-                    <div className="w-6 h-6 rounded-full bg-primary/10 flex items-center justify-center">
-                        <span className="text-[10px] font-bold text-primary">
-                            {message.isAnonymous ? '?' : (message.user?.name?.[0]?.toUpperCase() || 'U')}
-                        </span>
-                    </div>
-                    <span className="text-xs font-semibold text-foreground">
+                <div className="flex items-center gap-2 mb-1.5 px-0.5">
+                    <button 
+                        onClick={() => !message.isAnonymous && onViewProfile(message.user)}
+                        className={cn(
+                            "w-7 h-7 rounded-full overflow-hidden border border-border shadow-sm active:scale-90 transition-transform",
+                            !message.isAnonymous && "cursor-pointer hover:border-primary/50"
+                        )}
+                    >
+                        <Avatar className="w-full h-full">
+                            <AvatarImage src={avatarUrl} />
+                            <AvatarFallback className="bg-primary/10 text-[10px] font-bold text-primary italic">
+                                {message.isAnonymous ? '?' : (message.user?.name?.[0]?.toUpperCase() || 'U')}
+                            </AvatarFallback>
+                        </Avatar>
+                    </button>
+                    <button 
+                        onClick={() => !message.isAnonymous && onViewProfile(message.user)}
+                        className={cn(
+                            "text-xs font-bold text-foreground transition-all",
+                            !message.isAnonymous && "hover:text-primary hover:underline cursor-pointer"
+                        )}
+                    >
                         {message.isAnonymous ? 'Anonymous' : (message.user?.name || 'User')}
-                    </span>
+                    </button>
                     {message.user?.userType && !message.isAnonymous && (
-                        <span className="text-[10px] text-muted-foreground">
-                            · {message.user.userType.toUpperCase()} {message.user.experienceYears > 0 ? `· ${message.user.experienceYears}yr` : ''}
-                        </span>
+                        <div className="flex items-center gap-1.5 text-[10px] text-muted-foreground font-medium opacity-80">
+                            <span className="w-1 h-1 rounded-full bg-slate-300" />
+                            <span className="uppercase tracking-tighter">{message.user.userType.replace(/_/g, ' ')}</span>
+                            {message.user.experienceYears > 0 && <span>· {message.user.experienceYears}yr Exp</span>}
+                        </div>
                     )}
-                    <span className="text-[10px] text-muted-foreground ml-auto">{timeAgo}</span>
+                    <span className="text-[10px] text-muted-foreground ml-auto bg-slate-100 px-2 py-0.5 rounded-full">{timeAgo}</span>
                 </div>
 
                 {/* Post body */}
@@ -132,6 +154,7 @@ const SORT_TABS: { id: SortMode; label: string; icon: React.ReactNode }[] = [
 
 export function TrendingPage({ onNavigateToRoom }: TrendingPageProps) {
     const [sortMode, setSortMode] = useState<SortMode>('hot');
+    const [viewingUser, setViewingUser] = useState<any>(null);
     const { data: allMessages = [], isLoading } = useTrendingMessages(50);
 
     const sorted = [...allMessages].sort((a, b) => {
@@ -203,10 +226,17 @@ export function TrendingPage({ onNavigateToRoom }: TrendingPageProps) {
                             message={msg}
                             rank={i + 1}
                             onViewInRoom={(m) => onNavigateToRoom(m.roomName)}
+                            onViewProfile={setViewingUser}
                         />
                     ))
                 )}
             </div>
+
+            <UserProfileDrawer 
+                user={viewingUser} 
+                isOpen={!!viewingUser} 
+                onOpenChange={(open) => !open && setViewingUser(null)} 
+            />
         </div>
     );
 }

@@ -194,8 +194,8 @@ export default function Index() {
                 <TrendingUp className="w-4 h-4 text-accent" />
                 <span className="text-xs font-bold text-accent uppercase tracking-wider">Featured Resource</span>
               </div>
-              <h3 className="font-semibold text-foreground mb-1">New ACLS Guidelines 2024</h3>
-              <p className="text-sm text-muted-foreground mb-3">Download the latest quick-reference PDF for cardiac life support.</p>
+              <h3 className="font-semibold text-foreground mb-1">New ACLS Guidelines 2026</h3>
+              <p className="text-sm text-muted-foreground mb-3">Instant access to the 2026 resuscitation standards and cardiac arrest protocols.</p>
               <Button size="sm" variant="secondary" className="w-full bg-background border border-border text-foreground hover:bg-muted">
                 Download PDF
               </Button>

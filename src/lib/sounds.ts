@@ -56,6 +56,19 @@ class SoundEngine {
         setTimeout(() => this.playTone(1174.66, 0.2, 0.05), 50);
     }
 
+    /**
+     * Professional 'Ding-Dong' for system notifications.
+     */
+    playNotification() {
+        this.init();
+        if (!this.ctx) return;
+        
+        const now = this.ctx.currentTime;
+        // Low to High pleasant chime
+        this.playTone(523.25, 0.15, 0.08); // C5
+        setTimeout(() => this.playTone(659.25, 0.3, 0.06), 150); // E5
+    }
+
     private playTone(freq: number, duration: number, volume: number) {
         if (!this.ctx) return;
         const osc = this.ctx.createOscillator();

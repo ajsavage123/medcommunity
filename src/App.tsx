@@ -11,17 +11,37 @@ import Index from "./pages/Index";
 import Onboarding from "./pages/Onboarding";
 import NotFound from "./pages/NotFound";
 import { SplashScreen } from "@/components/layout/SplashScreen";
-import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { useState, useEffect, useRef } from "react";
 import { Skeleton } from "@/components/ui/skeleton";
+import { toast } from "@/hooks/use-toast";
 
 const queryClient = new QueryClient();
 
 function ProtectedRoute({ children }: { children: React.ReactNode }) {
   const { user, loading } = useAuth();
   const { data: profile, isLoading: profileLoading } = useProfile();
+  const hasShownWelcome = useRef(false);
+
   // Initialize real-time sync globally
   useRealtimeSync();
+
+  // Show "welcome back" toast for returning users (only once per session)
+  useEffect(() => {
+    if (!loading && !profileLoading && user && profile?.onboardingCompleted) {
+      const sessionKey = `welcomed_${user.id}`;
+      const alreadyWelcomed = sessionStorage.getItem(sessionKey);
+      if (!alreadyWelcomed && !hasShownWelcome.current) {
+        hasShownWelcome.current = true;
+        sessionStorage.setItem(sessionKey, '1');
+        const firstName = profile?.name?.split(' ')[0] || 'back';
+        toast({
+          title: `Welcome back, ${firstName}! 👋`,
+          description: "Great to see you again on EMR Community.",
+          duration: 3500,
+        });
+      }
+    }
+  }, [loading, profileLoading, user, profile]);
 
   // while we're waiting for auth or profile info just show skeleton
   if (loading || profileLoading) {
@@ -40,7 +60,7 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
     return <Navigate to="/auth" replace />;
   }
 
-  // redirect to onboarding unless we have a profile and onboarding has been completed
+  // redirect to onboarding only for brand new users who haven't completed it
   if (!profile?.onboardingCompleted) {
     return <Navigate to="/onboarding" replace />;
   }

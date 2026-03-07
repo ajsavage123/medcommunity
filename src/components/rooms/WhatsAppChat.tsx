@@ -2,7 +2,8 @@ import { useState, useRef, useEffect, useMemo } from 'react';
 import {
   ArrowLeft, Send, Lock, X, Pin, PinOff,
   CheckCheck, MessageCircle, MoreVertical, Copy, Trash2, Search as SearchIcon,
-  Paperclip, Image as ImageIcon, FileText, Camera
+  Paperclip, Image as ImageIcon, FileText, Camera,
+  MapPin, Phone, User as UserIcon, Calendar, Briefcase as BriefcaseIcon, GraduationCap as GradIcon
 } from 'lucide-react';
 import { Room } from '@/types';
 import { cn } from '@/lib/utils';
@@ -16,6 +17,8 @@ import { mockUsers } from '@/data/mockData';
 import { sounds } from '@/lib/sounds';
 import { User } from '@/types';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import { UserProfileDrawer } from '@/components/profile/UserProfileDrawer';
 import { getBadgeInfo } from '@/lib/badges';
 import { getExperienceYears } from '@/hooks/useProfile';
 
@@ -188,7 +191,7 @@ function ChatHeader({ room, onBack, isSearchOpen, setIsSearchOpen, searchQuery, 
 }
 
 function Bubble({
-  msg, isOwn, isAnonymousRoom, showAvatar, showName, isPinned, theme, onCtx, onReply, allMessages
+  msg, isOwn, isAnonymousRoom, showAvatar, showName, isPinned, theme, onCtx, onReply, onProfileView, allMessages
 }: {
   msg: EnrichedMessage;
   isOwn: boolean;
@@ -199,6 +202,7 @@ function Bubble({
   theme: RoomTheme;
   onCtx: (e: any, m: EnrichedMessage) => void;
   onReply: () => void;
+  onProfileView: (user: any) => void;
   allMessages: EnrichedMessage[];
 }) {
   const showAnon = isAnonymousRoom || msg.isAnonymous;
@@ -273,24 +277,32 @@ function Bubble({
       )}
 
       {showAvatar && (
-        <div className="w-[32px] h-[32px] shrink-0 self-start mt-0.5 relative">
-          <div className="absolute inset-0 rounded-[12px] bg-gradient-to-br from-white/50 to-black/10 blur-[1px]" />
-          <div className="relative w-full h-full rounded-[12px] bg-white overflow-hidden shadow-[0_4px_10px_rgba(0,0,0,0.1),inset_0_-2px_4px_rgba(0,0,0,0.1),inset_0_2px_4px_rgba(255,255,255,1)] border border-slate-200">
-            <img
-              src={avatarUrl}
-              alt={displayName}
-              className="w-full h-full object-cover p-0.5 animate-in zoom-in-50 duration-500"
+        <button 
+          onClick={(e) => { e.stopPropagation(); if (!showAnon) onProfileView(msg.user); }}
+          className="w-[32px] h-[32px] shrink-0 self-start mt-0.5 relative group active:scale-90 transition-transform"
+        >
+          <div className="absolute inset-0 rounded-[12px] bg-gradient-to-br from-white/50 to-black/10 blur-[1px] group-hover:from-primary/20 transition-colors" />
+          <Avatar className="w-full h-full rounded-[12px] bg-white shadow-md border border-slate-200">
+            <AvatarImage 
+              src={avatarUrl} 
+              className="object-cover p-0.5 animate-in zoom-in-50 duration-500" 
             />
-          </div>
-        </div>
+            <AvatarFallback className="bg-slate-100 text-[10px] font-black text-slate-400">
+              {displayName[0]?.toUpperCase() || '?'}
+            </AvatarFallback>
+          </Avatar>
+        </button>
       )}
 
       <div className={cn('flex flex-col max-w-[82%]', isOwn ? 'items-end' : 'items-start')}>
         {showName && (
           <div className={cn("flex items-center gap-1.5 mb-0.5 px-0.5", isOwn && "flex-row-reverse")}>
-            <span className={cn("text-[12px] font-bold", theme.nameColor)}>
+            <button 
+              onClick={(e) => { e.stopPropagation(); if (!showAnon) onProfileView(msg.user); }}
+              className={cn("text-[12px] font-bold hover:underline transition-all", theme.nameColor)}
+            >
               {isOwn ? 'You' : displayName}
-            </span>
+            </button>
             {badge && (
               <span className={cn(
                 "inline-flex items-center px-2 py-0.5 rounded-full text-[9px] font-black uppercase tracking-tighter border backdrop-blur-sm transition-all shadow-sm",
@@ -371,6 +383,8 @@ export function WhatsAppChat({ room, onBack }: WhatsAppChatProps) {
   const [replyingTo, setReplyingTo] = useState<EnrichedMessage | null>(null);
   const [ctx, setCtx] = useState<CtxMenu | null>(null);
   const [showGallery, setShowGallery] = useState(false);
+  const [viewingUser, setViewingUser] = useState<any>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Search state
   const [isSearchOpen, setIsSearchOpen] = useState(false);
@@ -394,18 +408,6 @@ export function WhatsAppChat({ room, onBack }: WhatsAppChatProps) {
   // Get pinned messages from the actual message data
   const pinnedMessages = useMemo(() => messages.filter(m => m.isPinned), [messages]);
 
-  // Handle Receiving Message Sounds
-  useEffect(() => {
-    if (messages.length > 0) {
-      const last = messages[messages.length - 1];
-      // Only play if it's a new incoming message (not from us)
-      if (lastMsgId.current && last.id !== lastMsgId.current && last.userId !== user?.id) {
-        sounds.playReceive();
-      }
-      lastMsgId.current = last.id;
-    }
-  }, [messages, user?.id]);
-
   useEffect(() => {
     if (!isSearchOpen && !searchQuery) {
       endRef.current?.scrollIntoView({ behavior: 'smooth' });
@@ -415,7 +417,6 @@ export function WhatsAppChat({ room, onBack }: WhatsAppChatProps) {
   const handleSend = async (content?: string) => {
     const val = content || text.trim();
     if (!val) return;
-    sounds.playSend(); // Immediate feedback for better UX
     try {
       await sendMessage.mutateAsync({
         roomId: room.id, content: val,
@@ -425,6 +426,22 @@ export function WhatsAppChat({ room, onBack }: WhatsAppChatProps) {
       setText('');
       setReplyingTo(null);
     } catch { toast({ title: 'Error sending message', variant: 'destructive' }); }
+  };
+
+  const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    setShowGallery(false);
+    toast({
+      title: 'Uploading file...',
+      description: `Preparing ${file.name} for clinical consultation.`,
+    });
+    
+    // Simulate upload delay and send mock message
+    setTimeout(() => {
+      handleSend(`📎 Attached: ${file.name} (${(file.size / 1024).toFixed(1)}KB)`);
+      toast({ title: 'Sent successfully' });
+    }, 1500);
   };
 
   const filteredMessages = useMemo(() => {
@@ -518,6 +535,7 @@ export function WhatsAppChat({ room, onBack }: WhatsAppChatProps) {
               theme={theme}
               onCtx={(e, msg) => setCtx({ x: e.clientX || e.pageX || 100, y: e.clientY || e.pageY || 200, msg })}
               onReply={() => setReplyingTo(m)}
+              onProfileView={setViewingUser}
               allMessages={messages}
             />
           </div>
@@ -554,15 +572,31 @@ export function WhatsAppChat({ room, onBack }: WhatsAppChatProps) {
 
           {showGallery && (
             <div className="absolute bottom-full left-0 mb-4 bg-white border border-slate-200 rounded-3xl shadow-2xl p-4 grid grid-cols-3 gap-4 animate-in fade-in zoom-in-95 duration-300 w-72 z-50">
-              <button className="flex flex-col items-center gap-2 p-2 rounded-2xl hover:bg-blue-50 transition-all group/btn" onClick={() => { handleSend("🖼️ Sharing high-res clinical image..."); setShowGallery(false); }}>
+              <input 
+                type="file" 
+                ref={fileInputRef} 
+                className="hidden" 
+                onChange={handleFileUpload}
+                accept="image/*,.pdf,.doc,.docx"
+              />
+              <button 
+                className="flex flex-col items-center gap-2 p-2 rounded-2xl hover:bg-blue-50 transition-all group/btn" 
+                onClick={() => fileInputRef.current?.click()}
+              >
                 <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center text-blue-600 shadow-sm group-hover/btn:scale-110 duration-300"><ImageIcon className="w-6 h-6" /></div>
                 <span className="text-[10px] font-bold text-slate-600">Photos</span>
               </button>
-              <button className="flex flex-col items-center gap-2 p-2 rounded-2xl hover:bg-emerald-50 transition-all group/btn" onClick={() => { handleSend("📄 Sharing secure medical document..."); setShowGallery(false); }}>
+              <button 
+                className="flex flex-col items-center gap-2 p-2 rounded-2xl hover:bg-emerald-50 transition-all group/btn" 
+                onClick={() => fileInputRef.current?.click()}
+              >
                 <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-600 shadow-sm group-hover/btn:scale-110 duration-300"><FileText className="w-6 h-6" /></div>
                 <span className="text-[10px] font-bold text-slate-600">Document</span>
               </button>
-              <button className="flex flex-col items-center gap-2 p-2 rounded-2xl hover:bg-amber-50 transition-all group/btn" onClick={() => { handleSend("📸 Taking a clinical photo..."); setShowGallery(false); }}>
+              <button 
+                className="flex flex-col items-center gap-2 p-2 rounded-2xl hover:bg-amber-50 transition-all group/btn" 
+                onClick={() => fileInputRef.current?.click()}
+              >
                 <div className="w-12 h-12 rounded-full bg-amber-100 flex items-center justify-center text-amber-600 shadow-sm group-hover/btn:scale-110 duration-300"><Camera className="w-6 h-6" /></div>
                 <span className="text-[10px] font-bold text-slate-600">Camera</span>
               </button>
@@ -638,6 +672,12 @@ export function WhatsAppChat({ room, onBack }: WhatsAppChatProps) {
           <Send className="w-5 h-5 fill-current" />
         </button>
       </div>
+
+      <UserProfileDrawer 
+        user={viewingUser} 
+        isOpen={!!viewingUser} 
+        onOpenChange={(open) => !open && setViewingUser(null)} 
+      />
 
       {ctx && (
         <div className="fixed inset-0 z-[100]" onClick={() => setCtx(null)}>

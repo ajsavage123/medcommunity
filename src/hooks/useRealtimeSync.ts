@@ -38,6 +38,7 @@ export function useRealtimeSync() {
             // Invalidate all message-related queries
             queryClient.invalidateQueries({ queryKey: ['messages'] });
             queryClient.invalidateQueries({ queryKey: ['trending-messages'] });
+            queryClient.invalidateQueries({ queryKey: ['stats', 'messages'] });
             
             // Handle specific message updates
             if (payload.eventType === 'UPDATE') {
@@ -91,6 +92,7 @@ export function useRealtimeSync() {
             const userId = payload.new.user_id;
             queryClient.invalidateQueries({ queryKey: ['profile', userId] });
             queryClient.invalidateQueries({ queryKey: ['profile'] });
+            queryClient.invalidateQueries({ queryKey: ['stats', 'users'] });
             
             // Refresh messages to show updated user info (avatar, name, badges)
             queryClient.invalidateQueries({ queryKey: ['messages'] });

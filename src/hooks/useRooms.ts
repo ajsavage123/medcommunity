@@ -21,8 +21,8 @@ export function useRooms() {
         icon: room.icon,
         isSystem: room.is_system,
         isAnonymous: room.is_anonymous,
-        memberCount: room.member_count,
-        messageCount: room.message_count,
+        memberCount: room.member_count || 0,
+        messageCount: room.message_count || 0,
       }));
     },
   });

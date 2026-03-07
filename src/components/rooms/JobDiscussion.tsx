@@ -8,6 +8,7 @@ import { useMessages, useSendMessage, EnrichedMessage } from '@/hooks/useMessage
 import { useMessageVotes, useVoteMessage } from '@/hooks/useMessageVotes';
 import { Skeleton } from '@/components/ui/skeleton';
 import { JobCard } from './JobCard';
+import { UserProfileDrawer } from '@/components/profile/UserProfileDrawer';
 
 interface JobDiscussionProps {
     job: JobPost;
@@ -17,6 +18,7 @@ interface JobDiscussionProps {
 
 export function JobDiscussion({ job, onClose, onVoteJob }: JobDiscussionProps) {
     const [newMessage, setNewMessage] = useState('');
+    const [viewingUser, setViewingUser] = useState<any>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
     const { data: messages = [], isLoading } = useMessages(job.id);
@@ -97,11 +99,14 @@ export function JobDiscussion({ job, onClose, onVoteJob }: JobDiscussionProps) {
                                         {(votesData[msg.id]?.upvotes ?? 0) - (votesData[msg.id]?.downvotes ?? 0)}
                                     </span>
                                 </div>
-                                <div className="flex-1 bg-card border border-border rounded-xl p-3 shadow-sm relative">
-                                    <div className="flex items-center gap-1.5 mb-2">
-                                        <span className="text-xs font-semibold text-foreground">
-                                            {msg.user?.name || 'Anonymous'}
-                                        </span>
+                                    <div className="flex-1 bg-card border border-border rounded-xl p-3 shadow-sm relative">
+                                         <div className="flex items-center gap-1.5 mb-2">
+                                             <button 
+                                                 onClick={() => msg.user && setViewingUser(msg.user)}
+                                                 className="text-xs font-semibold text-foreground hover:text-primary hover:underline transition-all"
+                                             >
+                                                 {msg.user?.name || 'Anonymous'}
+                                             </button>
                                         {msg.userId === job.userId && (
                                             <span className="bg-primary/10 text-primary text-[9px] font-bold px-1.5 py-0.5 rounded-sm uppercase tracking-wider">Poster</span>
                                         )}
@@ -137,6 +142,12 @@ export function JobDiscussion({ job, onClose, onVoteJob }: JobDiscussionProps) {
                     </Button>
                 </div>
             </div>
+
+            <UserProfileDrawer 
+                user={viewingUser} 
+                isOpen={!!viewingUser} 
+                onOpenChange={(open) => !open && setViewingUser(null)} 
+            />
         </div>
     );
 }

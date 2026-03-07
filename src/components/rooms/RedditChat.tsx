@@ -12,6 +12,9 @@ import { useMessages, useSendMessage, EnrichedMessage } from '@/hooks/useMessage
 import { useMessageVotes, useVoteMessage, MessageVoteData } from '@/hooks/useMessageVotes';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
+import { UserProfileDrawer } from '@/components/profile/UserProfileDrawer';
+import { getClayAvatar } from '@/lib/avatars';
 
 interface RedditChatProps {
     room: Room;
@@ -35,12 +38,15 @@ interface PostCardProps {
     replies: EnrichedMessage[];
     replyVotesData: Record<string, MessageVoteData>;
     onReplyVote: (id: string, type: 'up' | 'down') => void;
+    onViewProfile: (user: any) => void;
 }
 
-function PostCard({ message, voteData, onVote, onReply, replies, replyVotesData, onReplyVote }: PostCardProps) {
+function PostCard({ message, voteData, onVote, onReply, replies, replyVotesData, onReplyVote, onViewProfile }: PostCardProps) {
     const [showReplies, setShowReplies] = useState(false);
     const score = (voteData?.upvotes ?? 0) - (voteData?.downvotes ?? 0);
     const timeAgo = formatDistanceToNow(message.createdAt, { addSuffix: true });
+    const isAnon = message.isAnonymous;
+    const avatarUrl = message.user ? getClayAvatar(message.user.id, (message.user as any).gender, message.user.name) : '';
 
     return (
         <div className={cn(
@@ -91,11 +97,37 @@ function PostCard({ message, voteData, onVote, onReply, replies, replyVotesData,
                 <div className="flex-1 min-w-0">
                     {/* Meta */}
                     <div className="flex items-center gap-1.5 mb-2">
-                        <div className="w-5 h-5 rounded-full bg-muted flex items-center justify-center">
-                            <span className="text-[9px] font-bold text-muted-foreground">?</span>
-                        </div>
-                        <span className="text-xs font-semibold text-muted-foreground">Anonymous</span>
-                        <span className="text-[10px] text-muted-foreground">· {timeAgo}</span>
+                        <button 
+                            disabled={isAnon}
+                            onClick={() => message.user && onViewProfile(message.user)}
+                            className={cn(
+                                "w-6 h-6 rounded-full overflow-hidden border border-border bg-muted flex items-center justify-center transition-all shadow-sm",
+                                !isAnon && "hover:ring-2 hover:ring-primary/20 active:scale-90"
+                            )}
+                        >
+                            <Avatar className="w-full h-full">
+                                <AvatarImage src={avatarUrl} />
+                                <AvatarFallback className="text-[8px] font-bold text-muted-foreground italic bg-slate-100">
+                                    {isAnon ? '?' : (message.user?.name?.[0]?.toUpperCase() || 'U')}
+                                </AvatarFallback>
+                            </Avatar>
+                        </button>
+                        <button 
+                            disabled={isAnon}
+                            onClick={() => message.user && onViewProfile(message.user)}
+                            className={cn(
+                                "text-xs font-bold text-muted-foreground transition-colors",
+                                !isAnon && "hover:text-primary hover:underline cursor-pointer"
+                            )}
+                        >
+                            {isAnon ? 'Anonymous' : (message.user?.name || 'User')}
+                        </button>
+                        {message.user?.userType && !isAnon && (
+                            <span className="text-[10px] text-primary/70 font-bold uppercase tracking-tighter opacity-80 backdrop-blur-sm px-1.5 py-0.5 rounded-sm bg-primary/5">
+                                {message.user.userType.replace(/_/g, ' ')}
+                            </span>
+                        )}
+                        <span className="text-[10px] text-muted-foreground ml-auto">{timeAgo}</span>
                     </div>
 
                     {/* Body */}
@@ -164,6 +196,7 @@ export function RedditChat({ room, onBack }: RedditChatProps) {
     const [newMessage, setNewMessage] = useState('');
     const [sortMode, setSortMode] = useState<SortMode>('hot');
     const [replyingTo, setReplyingTo] = useState<EnrichedMessage | null>(null);
+    const [viewingUser, setViewingUser] = useState<any>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
 
     const { data: messages = [], isLoading } = useMessages(room.id);
@@ -280,10 +313,17 @@ export function RedditChat({ room, onBack }: RedditChatProps) {
                             replies={repliesByParent[msg.id] || []}
                             replyVotesData={votesData}
                             onReplyVote={(id, type) => voteMsg.mutateAsync({ messageId: id, roomId: room.id, voteType: type })}
+                            onViewProfile={setViewingUser}
                         />
                     ))
                 )}
             </div>
+
+            <UserProfileDrawer
+                user={viewingUser}
+                isOpen={!!viewingUser}
+                onOpenChange={(open) => !open && setViewingUser(null)}
+            />
 
             {/* Reply indicator */}
             {replyingTo && (

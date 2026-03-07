@@ -1,24 +1,27 @@
 /** 
- * Refined 'Apple-style' 3D-ish Avatars.
- * Uses Lorelei (premium claymorphic look) with gender support.
+ * Professional 'Official' Avatars.
+ * Uses clean initials on a sophisticated, medical-themed color palette.
+ * Provides a high-end corporate feel suitable for healthcare professionals.
  */
 export const getClayAvatar = (userId: string, gender?: 'male' | 'female', name?: string) => {
-    // Medical-themed background color palettes (calm blues, teals, slates)
-    const medicalBgs = ['b6e3f4', 'c0aede', 'd1d4f9', '94a3b8', 'e2e8f0'];
+    // Professional Medical/Corporate Palette (Trust-inspiring, deep shades)
+    const professionalBgs = [
+        '0f172a', // Slate 900 (Deep Navy)
+        '1e293b', // Slate 800
+        '334155', // Slate 700
+        '4338ca', // Indigo 700
+        '065f46', // Emerald 800
+        '115e59', // Teal 800
+        '1e40af', // Blue 800
+    ];
 
-    // Deterministic color based on user ID string
-    const seedNum = userId.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
-    const bgColor = medicalBgs[seedNum % medicalBgs.length];
-
-    // Lorelei setup - clean, professional, and high-quality 3D feel
-    const style = 'lorelei';
     const seed = name || userId;
+    const seedNum = seed.split('').reduce((acc, char) => acc + char.charCodeAt(0), 0);
+    const bgColor = professionalBgs[seedNum % professionalBgs.length];
 
-    // If gender is specified, we use variations of the seed that DiceBear's Lorelei 
-    // generally associates with those aesthetics.
-    const genderPrefix = gender === 'female' ? 'f-' : gender === 'male' ? 'm-' : '';
-
-    // We add 'radius=20' for a slightly rounded look that feels more 'app-like' 
-    // and 'translateY=5' to center the faces better in circle containers.
-    return `https://api.dicebear.com/7.x/${style}/svg?seed=${genderPrefix}${seed}&backgroundColor=${bgColor}&radius=15&translateY=5`;
+    // 'Initials' is the gold standard for professional/official apps (like Slack, AmbitionBox, Microsoft Teams).
+    const style = 'initials';
+    
+    // Using a clean, bold sans-serif font and subtle rounding (radius 10) for a premium look.
+    return `https://api.dicebear.com/7.x/${style}/svg?seed=${encodeURIComponent(seed)}&backgroundColor=${bgColor}&fontFamily=Arial,sans-serif&fontSize=45&fontWeight=700&chars=1&radius=10&textColor=ffffff`;
 };

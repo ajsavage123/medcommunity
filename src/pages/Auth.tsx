@@ -36,8 +36,8 @@ export default function Auth() {
       } else if (mode === 'login') {
         const { error } = await signIn(email, password);
         if (error) throw error;
-        toast({ title: 'Welcome back!', description: 'Successfully logged in.' });
-        navigate('/onboarding');
+        // Don't toast here as the ProtectedRoute will handle the "Welcome Back" greeting
+        navigate('/');
       } else {
         const { error } = await signUp(email, password);
         if (error) throw error;

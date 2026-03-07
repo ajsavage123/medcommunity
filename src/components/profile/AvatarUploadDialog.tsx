@@ -1,5 +1,5 @@
 import { useState, useRef } from 'react';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
@@ -72,6 +72,9 @@ export function AvatarUploadDialog({ open, onOpenChange }: AvatarUploadDialogPro
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Update Profile Picture</DialogTitle>
+          <DialogDescription>
+            Choose how you'd like to update your avatar. You can provide a URL or upload a file.
+          </DialogDescription>
         </DialogHeader>
 
         <Tabs defaultValue="url" className="mt-4">
