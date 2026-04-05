@@ -6,14 +6,14 @@ import type { Database } from '@/integrations/supabase/types';
 type UserType = Database['public']['Enums']['user_type'];
 type QualificationType = Database['public']['Enums']['qualification_type'];
 type SectorType = Database['public']['Enums']['sector_type'];
-type DesignationType = Database['public']['Enums']['designation_type'];
+type DesignationType = string;
 
 interface Profile {
   id: string;
   userId: string;
   name: string | null;
   avatarUrl: string | null;
-  gender?: 'male' | 'female' | 'other';
+  gender?: string;
   userType: UserType | null;
   qualification: QualificationType | null;
   designation: DesignationType | null;
@@ -49,23 +49,22 @@ export function useProfile() {
 
         if (error && error.code !== 'PGRST116') throw error;
 
-        if (!data) return null;
-
+        const profileData = data as any;
         return {
-          id: data.id,
-          userId: data.user_id,
-          name: data.name,
-          avatarUrl: data.avatar_url,
-          gender: data.gender as 'male' | 'female' | 'other' | undefined,
-          userType: data.user_type as UserType,
-          qualification: data.qualification as QualificationType,
-          designation: data.designation as DesignationType,
-          sector: data.sector as SectorType,
-          salary: data.salary,
-          experienceStartDate: data.experience_start_date,
-          onboardingCompleted: data.onboarding_completed,
-          createdAt: new Date(data.created_at),
-          updatedAt: new Date(data.updated_at),
+          id: profileData.id,
+          userId: profileData.user_id,
+          name: profileData.name,
+          avatarUrl: profileData.avatar_url,
+          gender: profileData.gender,
+          userType: profileData.user_type as UserType,
+          qualification: profileData.qualification as QualificationType,
+          designation: profileData.designation as DesignationType,
+          sector: profileData.sector as SectorType,
+          salary: profileData.salary,
+          experienceStartDate: profileData.experience_start_date,
+          onboardingCompleted: profileData.onboarding_completed,
+          createdAt: new Date(profileData.created_at),
+          updatedAt: new Date(profileData.updated_at),
         };
       } catch (error) {
         console.error('Error fetching profile:', error);
@@ -107,13 +106,18 @@ export function useUserRoles() {
 
   return useQuery({
     queryKey: ['user-roles', user?.id],
-    queryFn: async () => {
+    queryFn: async (): Promise<string[]> => {
       if (!user) return [];
 
       try {
-        // This would typically query a user_roles table
-        // For now, returning empty array - customize based on your needs
-        return [];
+        const { data, error } = await supabase
+          .from('user_roles')
+          .select('role')
+          .eq('user_id', user.id);
+
+        if (error) throw error;
+
+        return data.map(r => r.role);
       } catch (error) {
         console.error('Error fetching user roles:', error);
         return [];

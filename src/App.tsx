@@ -68,12 +68,27 @@ function ProtectedRoute({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
+import { AdminRoute } from "@/components/layout/AdminRoute";
+import Admin from "./pages/Admin";
+import UserManagement from "./pages/admin/UserManagement";
+import RoomManagement from "./pages/admin/RoomManagement";
+import ResourceManagement from "./pages/admin/ResourceManagement";
+
 function AppRoutes() {
   return (
     <Routes>
       <Route path="/auth" element={<Auth />} />
       <Route path="/onboarding" element={<Onboarding />} />
       <Route path="/" element={<ProtectedRoute><Index /></ProtectedRoute>} />
+      
+      {/* Admin Protected Routes */}
+      <Route element={<AdminRoute />}>
+        <Route path="/admin" element={<Admin />} />
+        <Route path="/admin/users" element={<UserManagement />} />
+        <Route path="/admin/rooms" element={<RoomManagement />} />
+        <Route path="/admin/tools" element={<ResourceManagement />} />
+      </Route>
+
       {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
       <Route path="*" element={<NotFound />} />
     </Routes>

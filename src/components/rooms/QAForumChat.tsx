@@ -8,6 +8,9 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { toast } from '@/hooks/use-toast';
 import { getClayAvatar } from '@/lib/avatars';
+import { useAdmin } from '@/hooks/useAdmin';
+import { AdminMessageMenu } from '@/components/admin/AdminMessageMenu';
+import { EnrichedMessage } from '@/hooks/useMessages';
 
 interface QAPost {
     id: string;
@@ -300,6 +303,8 @@ export function QAForumChat({ room, onBack }: QAForumChatProps) {
     const [selected, setSelected] = useState<QAPost | null>(null);
     const [showForm, setShowForm] = useState(false);
     const [form, setForm] = useState({ title: '', body: '' });
+    const [adminMenu, setAdminMenu] = useState<any>(null);
+    const { isAdmin } = useAdmin();
 
     if (selected) {
         return (
@@ -373,12 +378,31 @@ export function QAForumChat({ room, onBack }: QAForumChatProps) {
             {/* Post list */}
             <div className="flex-1 overflow-y-auto p-4 space-y-3">
                 {filtered.map(post => (
-                    <PostCard
-                        key={post.id}
-                        post={post}
-                        onClick={() => setSelected(post)}
-                        onVote={() => { }}
-                    />
+                    <div key={post.id} className="relative group">
+                        <PostCard
+                            post={post}
+                            onClick={() => setSelected(post)}
+                            onVote={() => { }}
+                        />
+                        {isAdmin && (
+                            <button 
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    // Map QAPost to a minimal EnrichedMessage structure for the menu
+                                    setAdminMenu({
+                                        id: post.id,
+                                        content: post.title,
+                                        createdAt: post.createdAt,
+                                        roomId: room.id,
+                                        user: { name: post.authorName, id: post.id, avatarUrl: '', userType: post.authorBadge }
+                                    });
+                                }}
+                                className="absolute top-2 right-2 p-1.5 bg-white/80 dark:bg-zinc-800/80 rounded-full opacity-0 group-hover:opacity-100 transition-opacity shadow-sm border border-border"
+                            >
+                                <MoreVertical className="w-4 h-4 text-primary" />
+                            </button>
+                        )}
+                    </div>
                 ))}
                 {filtered.length === 0 && (
                     <div className="text-center py-16">
@@ -428,6 +452,13 @@ export function QAForumChat({ room, onBack }: QAForumChatProps) {
                         </div>
                     </div>
                 </div>
+            )}
+            {adminMenu && (
+                <AdminMessageMenu
+                    message={adminMenu}
+                    roomId={room.id}
+                    onClose={() => setAdminMenu(null)}
+                />
             )}
         </div>
     );

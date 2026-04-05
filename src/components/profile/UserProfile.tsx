@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Settings, LogOut, Bell, Shield, HelpCircle, ChevronRight, Bookmark, MessageSquare, Camera } from 'lucide-react';
+import { Settings, LogOut, Bell, Shield, ShieldCheck, HelpCircle, ChevronRight, Bookmark, MessageSquare, Camera } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { useAuth } from '@/contexts/AuthContext';
 import { useProfile, useUserRoles, getExperienceYears } from '@/hooks/useProfile';
@@ -191,6 +191,20 @@ export function UserProfile() {
               </Button>
             </div>
           </div>
+        </div>
+      )}
+
+      {/* Admin Quick Entry */}
+      {isAdmin && (
+        <div className="bg-red-500/5 rounded-2xl p-1 mb-2 border border-red-500/20 shadow-sm">
+          <button
+            onClick={() => window.location.assign('/admin')}
+            className="w-full flex items-center gap-3 p-3 rounded-xl hover:bg-red-500/10 transition-all group"
+          >
+            <ShieldCheck className="w-5 h-5 text-red-500 font-black" />
+            <span className="flex-1 text-left text-red-600 font-bold uppercase text-[10px] tracking-widest tracking-tighter">Admin Dashboard</span>
+            <ChevronRight className="w-4 h-4 text-red-400" />
+          </button>
         </div>
       )}
 

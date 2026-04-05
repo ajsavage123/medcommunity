@@ -88,7 +88,10 @@ export function useMessages(roomId: string) {
 
         queryClient.setQueryData(['messages', roomId], (old: any) => {
           const arr = old ? [...old] : [];
-          arr.push(newMsg);
+          // Prevent duplicates by checking if the message ID already exists
+          if (!arr.find((m: any) => m.id === newMsg.id)) {
+            arr.push(newMsg);
+          }
           return arr;
         });
       } else if (payload.eventType === 'UPDATE') {

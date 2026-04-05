@@ -16,27 +16,34 @@ export function useMessageVotes(messageIds: string[]) {
     queryKey: ['message-votes', messageIds],
     queryFn: async () => {
       if (messageIds.length === 0) return {};
-      const { data, error } = await supabase
-        .from('message_votes')
-        .select('*')
-        .in('message_id', messageIds);
-      if (error) throw error;
+
+      // Filter out non-UUID message IDs (like hardcoded mock guides)
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      const validUuids = messageIds.filter(id => uuidRegex.test(id));
 
       const map: Record<string, MessageVoteData> = {};
       messageIds.forEach((id) => {
         map[id] = { upvotes: 0, downvotes: 0, score: 0, userVote: null };
       });
 
-      data?.forEach((vote: any) => {
-        const { message_id, vote_type, user_id } = vote;
-        if (!map[message_id]) return;
-        if (vote_type === 'up') map[message_id].upvotes++;
-        if (vote_type === 'down') map[message_id].downvotes++;
-        if (user && user.id === user_id) {
-          map[message_id].userVote = vote_type;
-        }
-        map[message_id].score = map[message_id].upvotes - map[message_id].downvotes;
-      });
+      if (validUuids.length > 0) {
+        const { data, error } = await supabase
+          .from('message_votes')
+          .select('*')
+          .in('message_id', validUuids);
+        if (error) throw error;
+
+        data?.forEach((vote: any) => {
+          const { message_id, vote_type, user_id } = vote;
+          if (!map[message_id]) return;
+          if (vote_type === 'up') map[message_id].upvotes++;
+          if (vote_type === 'down') map[message_id].downvotes++;
+          if (user && user.id === user_id) {
+            map[message_id].userVote = vote_type;
+          }
+          map[message_id].score = map[message_id].upvotes - map[message_id].downvotes;
+        });
+      }
       return map;
     },
     enabled: messageIds.length > 0,
@@ -58,14 +65,19 @@ export function useVoteMessage() {
     }) => {
       if (!user) throw new Error('Not authenticated');
 
-      // fetch existing vote if any
+      // fetch existing vote if any - only if it is a real UUID
+      const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+      if (!uuidRegex.test(messageId)) {
+        throw new Error('You cannot vote on automated guide messages.');
+      }
+
       const { data: existing, error: fetchErr } = await supabase
         .from('message_votes')
         .select('*')
         .eq('message_id', messageId)
         .eq('user_id', user.id)
-        .single();
-      if (fetchErr && fetchErr.code !== 'PGRST116') throw fetchErr;
+        .maybeSingle();
+      if (fetchErr) throw fetchErr;
 
       if (existing) {
         if (existing.vote_type === voteType) {

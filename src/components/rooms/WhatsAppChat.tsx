@@ -10,6 +10,7 @@ import { cn } from '@/lib/utils';
 import { format, isToday, isYesterday, isSameDay } from 'date-fns';
 import { useMessages, useSendMessage, EnrichedMessage, useDeleteMessage, useTogglePinMessage } from '@/hooks/useMessages';
 import { useAuth } from '@/contexts/AuthContext';
+import { AdminMessageMenu } from '@/components/admin/AdminMessageMenu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
 import { getClayAvatar } from '@/lib/avatars';
@@ -19,6 +20,7 @@ import { User } from '@/types';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 import { UserProfileDrawer } from '@/components/profile/UserProfileDrawer';
+import { useAdmin } from '@/hooks/useAdmin';
 import { getBadgeInfo } from '@/lib/badges';
 import { getExperienceYears } from '@/hooks/useProfile';
 
@@ -402,6 +404,7 @@ export function WhatsAppChat({ room, onBack }: WhatsAppChatProps) {
   const deleteMessage = useDeleteMessage();
   const togglePin = useTogglePinMessage();
 
+  const { isAdmin } = useAdmin();
   const theme = useMemo(() => ROOM_THEMES[room.type] || ROOM_THEMES.general, [room.type]);
   const lastMsgId = useRef<string | null>(null);
 
@@ -680,49 +683,11 @@ export function WhatsAppChat({ room, onBack }: WhatsAppChatProps) {
       />
 
       {ctx && (
-        <div className="fixed inset-0 z-[100]" onClick={() => setCtx(null)}>
-          <div
-            className="absolute bg-white shadow-2xl rounded-2xl py-1.5 min-w-[180px] border border-slate-200 animate-in zoom-in-95 duration-200 overflow-hidden shadow-[0_10px_30px_rgba(0,0,0,0.15)]"
-            style={{ left: Math.min(ctx.x, window.innerWidth - 200), top: Math.min(ctx.y, window.innerHeight - 300) }}
-          >
-            <button onClick={() => { setReplyingTo(ctx.msg); setCtx(null); }} className="w-full px-4 py-3 text-left text-[14px] flex items-center gap-3 hover:bg-slate-50 transition-colors text-slate-700 font-bold">
-              <MessageCircle className="w-4 h-4 text-blue-500" /> Reply
-            </button>
-            {user?.id === ctx.msg.userId && (
-              <button
-                onClick={() => {
-                  togglePin.mutate({ messageId: ctx.msg.id, isPinned: ctx.msg.isPinned || false, roomId: room.id });
-                  setCtx(null);
-                  toast({ title: ctx.msg.isPinned ? 'Message unpinned' : 'Message pinned successfully' });
-                }}
-                className="w-full px-4 py-3 text-left text-[14px] flex items-center gap-3 hover:bg-slate-50 transition-colors text-slate-700 font-bold"
-              >
-                <Pin className={cn("w-4 h-4", ctx.msg.isPinned ? "text-red-500" : "text-orange-500")} />
-                {ctx.msg.isPinned ? 'Unpin' : 'Pin'}
-              </button>
-            )}
-            <button onClick={() => { navigator.clipboard.writeText(ctx.msg.content); setCtx(null); toast({ title: 'Copied' }); }} className="w-full px-4 py-3 text-left text-[14px] flex items-center gap-3 hover:bg-slate-50 transition-colors text-slate-700 font-bold">
-              <Copy className="w-4 h-4 text-slate-500" /> Copy
-            </button>
-            <div className="p-1">
-              <button
-                onClick={() => {
-                  if (user?.id === ctx.msg.userId) {
-                    deleteMessage.mutate({ messageId: ctx.msg.id, roomId: room.id });
-                    setCtx(null);
-                    toast({ title: 'Message deleted' });
-                  } else {
-                    toast({ title: 'You can only delete your own messages', variant: 'destructive' });
-                    setCtx(null);
-                  }
-                }}
-                className="w-full px-3 py-2 text-left text-[14px] flex items-center gap-3 bg-red-50 hover:bg-red-100 rounded-xl transition-all text-red-600 font-bold"
-              >
-                <Trash2 className="w-4 h-4" /> Delete
-              </button>
-            </div>
-          </div>
-        </div>
+        <AdminMessageMenu
+          message={ctx.msg}
+          roomId={room.id}
+          onClose={() => setCtx(null)}
+        />
       )}
 
       <style>{`

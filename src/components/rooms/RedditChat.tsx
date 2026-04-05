@@ -10,6 +10,8 @@ import { cn } from '@/lib/utils';
 import { formatDistanceToNow } from 'date-fns';
 import { useMessages, useSendMessage, EnrichedMessage } from '@/hooks/useMessages';
 import { useMessageVotes, useVoteMessage, MessageVoteData } from '@/hooks/useMessageVotes';
+import { useAdmin } from '@/hooks/useAdmin';
+import { AdminMessageMenu } from '@/components/admin/AdminMessageMenu';
 import { Skeleton } from '@/components/ui/skeleton';
 import { toast } from '@/hooks/use-toast';
 import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
@@ -197,7 +199,9 @@ export function RedditChat({ room, onBack }: RedditChatProps) {
     const [sortMode, setSortMode] = useState<SortMode>('hot');
     const [replyingTo, setReplyingTo] = useState<EnrichedMessage | null>(null);
     const [viewingUser, setViewingUser] = useState<any>(null);
+    const [adminMenu, setAdminMenu] = useState<EnrichedMessage | null>(null);
     const inputRef = useRef<HTMLTextAreaElement>(null);
+    const { isAdmin } = useAdmin();
 
     const { data: messages = [], isLoading } = useMessages(room.id);
     const sendMessage = useSendMessage();
@@ -308,11 +312,31 @@ export function RedditChat({ room, onBack }: RedditChatProps) {
                             key={msg.id}
                             message={msg}
                             voteData={votesData[msg.id]}
-                            onVote={(type) => voteMessage.mutateAsync({ messageId: msg.id, roomId: room.id, voteType: type })}
+                            onVote={async (type) => {
+                                try {
+                                    await voteMessage.mutateAsync({ messageId: msg.id, roomId: room.id, voteType: type });
+                                } catch (e: any) {
+                                    toast({ 
+                                        variant: "default", 
+                                        title: "Medical Board Post", 
+                                        description: "You cannot vote on board guidelines or automated posts." 
+                                    });
+                                }
+                            }}
                             onReply={() => { setReplyingTo(msg); setTimeout(() => inputRef.current?.focus(), 100); }}
                             replies={repliesByParent[msg.id] || []}
                             replyVotesData={votesData}
-                            onReplyVote={(id, type) => voteMsg.mutateAsync({ messageId: id, roomId: room.id, voteType: type })}
+                            onReplyVote={async (id, type) => {
+                                try {
+                                    await voteMsg.mutateAsync({ messageId: id, roomId: room.id, voteType: type });
+                                } catch (e: any) {
+                                    toast({ 
+                                        variant: "default", 
+                                        title: "Medical Board Post", 
+                                        description: "You cannot vote on automated posts." 
+                                    });
+                                }
+                            }}
                             onViewProfile={setViewingUser}
                         />
                     ))
@@ -324,6 +348,14 @@ export function RedditChat({ room, onBack }: RedditChatProps) {
                 isOpen={!!viewingUser}
                 onOpenChange={(open) => !open && setViewingUser(null)}
             />
+
+            {adminMenu && (
+                <AdminMessageMenu
+                    message={adminMenu}
+                    roomId={room.id}
+                    onClose={() => setAdminMenu(null)}
+                />
+            )}
 
             {/* Reply indicator */}
             {replyingTo && (
